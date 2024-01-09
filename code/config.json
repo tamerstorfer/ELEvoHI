@@ -1,0 +1,18 @@
+{
+    "basic_path": "/Users/tanja/STEREO-HI-Data-Processing/data/stereo_processed/jplot/",
+    "prediction_path": "/Users/tanja/ELEvoHI/predictions/",
+    "eventdate": "20200623",
+    "HIobs": "A",
+    "mode": "science",
+    "phi_FPF": true,
+    "phi_manual": 71,
+    "f": 0.7,
+    "halfwidth": 45,
+    "startcut": 0,
+    "endcut": 30,
+    "outer_system": false,
+    "movie": false,
+    "L1_ist_obs": "2020-06-30 01:12",
+    "L1_isv_obs": 332,
+    "silent": true
+}
