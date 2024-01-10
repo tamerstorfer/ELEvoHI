@@ -21,7 +21,7 @@ Note, that the standard deviation derived from these measurements is not used wi
 
 **2. Cloning ELEvoHI**
 
-Clone the ELEvoHI folder in the same directory where STEREO-HI-Data-Processing is located.
+Clone the ELEvoHI folder into the same directory where STEREO-HI-Data-Processing is located.
 
 **3. Setting up the ELEvoHI config file**
 
