@@ -19,7 +19,10 @@ Note, that the standard deviation derived from these measurements is not used wi
 
 **Important:** *Since ELEvoHI is used to predict arrival times and speeds at targets in the ecliptic, it is necessary to perform the measurements of the CME front within the ecliptic!*
 
-**2. Setting up the ELEvoHI config file**
+**2. Cloning ELEvoHI**
+Clone the ELEvoHI folder in the same directory where STEREO-HI-Data-Processing is located.
+
+**3. Setting up the ELEvoHI config file**
 
 The config.json file is stored in the Code folder and should be edited directly without producing a folder for the predicted event. This is done automatically.
 
@@ -80,13 +83,13 @@ For realtime predictions delete this line.
     "silent": true
 If you want to avoid unnecessary terminal output, set this to true.
 
-**3. Installing requirements to run Python**
+**4. Installing requirements to run Python**
 
     conda create --n "helio_hi"
     conda activate helio_hi
     pip install -r requirements.txt
 
-**4. Running ELEvoHI**
+**5. Running ELEvoHI**
         
 When the parameters needed are set and the helio_hi environment is active run ELEvoHI as follows:
 
