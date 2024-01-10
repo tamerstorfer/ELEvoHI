@@ -94,7 +94,8 @@ When the parameters needed are set and the helio_hi environment is active run EL
 
 When ELEvoHI has finished, the result of the prediction is given in the terminal. Plots and figures can be found in the according folder under the defined prediction_path.
 
-The ensemble version of ELEvoHI will soon follow in Python. Also, the possibility of frontal deformation will be implemented again in Python.
+The ensemble version of ELEvoHI (Amerstorfer et al., 2018) will soon follow in Python. Also, the possibility of frontal deformation (Hinterreiter et al., 2021b) will be implemented again in Python.
+In case you find a bug or if you have any questions, please contact me (tanja.amerstorfer (at) geosphere.at).
 
 
 
