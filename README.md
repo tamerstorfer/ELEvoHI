@@ -84,6 +84,45 @@ For realtime predictions delete this line.
 If known, you can state the detected in situ arrival speed (we usually use the mean speed in the sheath as a comparison).
 For realtime predictions delete this line.
 
+These are all available spacecraft and planets for which an arrival prediction can be performed.
+State the measured in situ arrival time as follows:
+
+    L1_ist_obs
+    STEREOA_ist_obs
+    STEREOB_ist_obs
+    MESSENGER_ist_obs
+    VENUSEXPRESS_ist_obs
+    BEPICOLOMBO_ist_obs
+    SOLARORBITER_ist_obs
+    PARKERSOLARPROBE_ist_obs
+    MERCURY_ist_obs
+    VENUS_ist_obs
+    EARTH_ist_obs
+    MARS_ist_obs
+    JUPITER_ist_obs
+    SATURN_ist_obs
+    URANUS_ist_obs
+    NEPTUNE_ist_obs
+
+State the measured in situ arrival speed as follows:
+
+    L1_isv_obs
+    STEREOA_isv_obs
+    STEREOB_isv_obs
+    MESSENGER_isv_obs
+    VENUSEXPRESS_isv_obs
+    BEPICOLOMBO_isv_obs
+    SOLARORBITER_isv_obs
+    PARKERSOLARPROBE_isv_obs
+    MERCURY_isv_obs
+    VENUS_isv_obs
+    EARTH_isv_obs
+    MARS_isv_obs
+    JUPITER_isv_obs
+    SATURN_isv_obs
+    URANUS_isv_obs
+    NEPTUNE_isv_obs
+
     "silent": true
 If you want to avoid unnecessary terminal output, set this to true.
 
