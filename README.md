@@ -123,9 +123,10 @@ State the measured in situ arrival speed as follows:
     URANUS_isv_obs
     NEPTUNE_isv_obs
 
-  
+ In situ arrival times and speeds can be given independent from each other.
+
     "silent": true
-    
+
 If you want to avoid unnecessary terminal output, set this to true.
 
 **5. Running ELEvoHI**
