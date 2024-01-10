@@ -12,7 +12,7 @@ A Python-based tool for downloading HI data, data reduction and tracking can be 
 
 https://github.com/maikebauer/STEREO-HI-Data-Processing
 
-(Note: When you prefer to use tracks from a different source some paths might be adjusted within the code.)
+(Note: When you prefer to use tracks from a different source some paths need to be adjusted within the code.)
 
 Usually, we measure a CME front at least 5 times and build a mean track in order to get a good representative of the CME evolution. This is already implemented in the model and done automatically after tracking.
 Note, that the standard deviation derived from these measurements is not used within ELEvoHI.
