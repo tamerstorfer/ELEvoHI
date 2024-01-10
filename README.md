@@ -49,22 +49,22 @@ quality of HI data (beacon, science)
 Set true if you want to run FPF in advance to derive the direction of motion
 
     "phi_manual": 71,
-Set if FPF is not used. This parameter is ignored if FPF is set to true.
+Propagation direction in degree of the CME apex relative to the HI observer. This parameter is ignored if FPF is set to true.
 
     "f": 0.7,
-inverse ellipse aspect ratio (1 meand circular, smaller values correspond to a flattened front)
+inverse ellipse aspect ratio (1 means circular, smaller values correspond to a flattened front)
 
     "halfwidth": 45,
-half width within in degree the ecliptic plane (minimum: 1, maximum: 90)
+half width in degree within the ecliptic plane (minimum: 1, maximum: 90)
 
     "startcut": 0,
 When our STEREO-HI-Data-Processing tool is used to measure the CME front, the track consists of 30 time-elongation pairs.
-Startcut corresponds to the first data point considered in th modelling.
-(Note: Since ELEvoHI is assuming a drag-based propagation, it is necessary that any early acceleration due to the Lorentz-force is excluded to be used for modelling. Usually, a reasonable region to perform the DBMfit is from 20 to 100 solar radii. For some events, the initial distance can be also very close to the Sun or even farther out. This depends on the kinematics of each event individually.)
+Startcut corresponds to the first data point considered in the modelling.
+Note: Since ELEvoHI is assuming a drag-based propagation, it is necessary that any early acceleration due to the Lorentz-force is excluded to be used for modelling. Usually, a reasonable intervall to perform the DBMfit is from 20 to 100 solar radii. For some events, the initial distance can be also very close to the Sun or even farther out. This depends on the kinematics of each event individually. 
 
     "endcut": 30,
 Last data point cosidered for modelling. Use smaller values in case the DBMfit is not converging.
-This might be the case for CMEs that are influenced by other CMEs or high-speed solar wind streams.
+This might be the case for CMEs that are influenced by other CMEs or high-speed solar wind streams. To get a first glance of the CME kinematics, set the startcut to 0, the endcut to 30 and rerun if needed.
 
     "outer_system": false,
 Set true for modelling up to the heliocentric distance of Neptune.
@@ -73,7 +73,7 @@ Set true for modelling up to the heliocentric distance of Neptune.
 Set true to produce a movie. Make sure you have installed ffmpeg.
 
     "L1_ist_obs": "2020-06-30 01:12",
-If known, you can state the detected in situ arrival time for L1 (or other targets). In this case, the difference of modeled and detected arrival time is directly calculated.
+If known, you can state the detected in situ arrival time for L1 (or other targets). In this case, the difference of modelled and detected arrival time is directly calculated.
 For realtime predictions delete this line.
 
     "L1_isv_obs": 332,
