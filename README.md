@@ -1,5 +1,5 @@
 # ELEvoHI (single run version)
-ELlipse Evolution model based on Heliospheric Imager observations (ELEvoHI) predicts arrival times and speeds of coronal mass ejections at any target in the inner heliosphere. Detailed information on the model can be found in T. Rollett et al. (2016, single-run version) and T. Amerstorfer et al. (2018, ensemble version).
+ELlipse Evolution model based on Heliospheric Imager observations (ELEvoHI) models the evolution of coronal mass ejections and and predicts arrival times and speeds at any target in the heliosphere. Detailed information on the model can be found in T. Rollett et al. (2016, single-run version) and T. Amerstorfer et al. (2018, ensemble version).
 
 In the following, it is described how ELEvoHI can be used based on data from heliospheric images alone, i.e. no coronagraph data are needed.
 
