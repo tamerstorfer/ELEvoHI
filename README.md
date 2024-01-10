@@ -20,6 +20,7 @@ Note, that the standard deviation derived from these measurements is not used wi
 **Important:** *Since ELEvoHI is used to predict arrival times and speeds at targets in the ecliptic, it is necessary to perform the measurements of the CME front within the ecliptic!*
 
 **2. Cloning ELEvoHI**
+
 Clone the ELEvoHI folder in the same directory where STEREO-HI-Data-Processing is located.
 
 **3. Setting up the ELEvoHI config file**
