@@ -29,12 +29,8 @@ The config.json file is stored in the Code folder and should be edited directly 
 
 In the config file, we need to define the following parameters:
 
-    "basic_path": "~/STEREO-HI-Data-Processing/data/stereo_processed/jplot/",
-location of the mean elongation track. The detailed path is depending on other parameters defined in this config file.
-It is of the format of ~/STEREO-HI-Data-Processing/data/stereo_processed/jplot/A/science/hi1hi2/2020/Tracks/20200623/interpolated_track/mean_track.csv
-
-    "prediction_path": "~/ELEvoHI/predictions/",
-path to save predictions. Is produced automatically.
+    "basic_path": "/User/username/",
+location of the folders STEREO-HI-Data-Processing and ELEvoHI.
 
     "eventdate": "20200623",
 date of the first HI data point
