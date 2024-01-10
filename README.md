@@ -82,9 +82,9 @@ If you want to avoid unnecessary terminal output, set this to true.
 
 **3. Installing requirements to run Python**
 
-...requirements file missing
-
+    conda create --n "helio_hi"
     conda activate helio_hi
+    pip install -r requirements.txt
 
 **4. Running ELEvoHI**
         
