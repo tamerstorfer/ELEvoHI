@@ -8,7 +8,10 @@ In the following, it is described how ELEvoHI can be used based on data from hel
 **1. Measure the CME front in heliospheric images**
 
 The first and mandatory step to use ELEvoHI is to measure the propagating CME within heliospheric imager data. This can either be done in time-elongation maps or directly in the (running difference) images.
-A Python-based tool for downloading HI data, data reduction and tracking can be found here: https://github.com/maikebauer/STEREO-HI-Data-Processing
+A Python-based tool for downloading HI data, data reduction and tracking can be found here:
+
+https://github.com/maikebauer/STEREO-HI-Data-Processing
+
 (Note: When you prefer to use tracks from a different source some paths might be adjusted within the code.)
 
 Usually, we measure a CME front at least 5 times and build a mean track in order to get a good representative of the CME evolution. This is already implemented in the model and done automatically after tracking.
