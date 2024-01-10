@@ -1,6 +1,5 @@
 {
-    "basic_path": "/Users/tanja/STEREO-HI-Data-Processing/data/stereo_processed/jplot/",
-    "prediction_path": "/Users/tanja/ELEvoHI/predictions/",
+    "basic_path": "/Users/tanja/",
     "eventdate": "20200623",
     "HIobs": "A",
     "mode": "science",

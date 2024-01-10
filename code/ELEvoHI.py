@@ -19,6 +19,7 @@ import json
 import pickle
 import csv
 import logging
+import shutil
 
 from functions import load_config, calculate_new_time_axis, merge_tracks, fpf_function, fpf, ELCon, fitdbm, fitdbmneg, cost_function, cost_functionneg, DBMfitting, elevo_analytic, elevo, assess_prediction
 
@@ -33,7 +34,7 @@ def main():
     config = load_config('/Users/tanja/ELEvoHI/code/config.json')
 
     basic_path = config['basic_path']
-    pred_path = config['prediction_path']
+    pred_path = basic_path + 'ELEvoHI/predictions/'
     eventdate = config['eventdate']
     HIobs = config['HIobs']
     mode = config['mode']
@@ -46,6 +47,9 @@ def main():
     outer_system = config['outer_system']
     movie = config['movie']
     silent = config['silent']
+    
+    if not os.path.exists(pred_path):
+        os.mkdir(pred_path)
     
     L1_istime = config.get('L1_ist_obs', None)
     if not L1_istime == None:
@@ -129,9 +133,10 @@ def main():
         NEPTUNE_isspeed = config.get('NEPTUNE_isv_obs', np.nan)
     
     year = eventdate[:4]
-    event_path = basic_path + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
+    event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
     
+    shutil.copy(basic_path + 'ELEvoHI/code/config.json', prediction_path)
     
     # combines the time-elongation tracks into one average track on a equitemporal time-axis
     # includes standard deviation and saves a figure to the predictions folder
@@ -900,7 +905,6 @@ def main():
 
     if target_neptune_present.any():
         dt_neptune, dv_neptune = assess_prediction(prediction, 'Neptune', NEPTUNE_istime, NEPTUNE_isspeed)
-        
     
 if __name__ == '__main__':
     main()
