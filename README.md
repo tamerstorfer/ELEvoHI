@@ -25,7 +25,7 @@ Clone the ELEvoHI folder into the same directory where STEREO-HI-Data-Processing
 
 **3. Setting up the ELEvoHI config file**
 
-The config.json file is stored in the Code folder and should be edited directly without producing a folder for the predicted event. This is done automatically.
+The config.json file is stored in the ELEvoHI/code folder and needs to be edited to set the parameter for the event of interest. When running ELEvoHI it is copied to the according folder of the event to save it.
 
 In the config file, we need to define the following parameters:
 
