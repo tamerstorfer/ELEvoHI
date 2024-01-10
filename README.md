@@ -22,11 +22,15 @@ Note, that the standard deviation derived from these measurements is not used wi
 **2. Cloning ELEvoHI**
 
 Clone the ELEvoHI folder into the same directory where STEREO-HI-Data-Processing is located.
-Change to ELEvoHI/code:
 
+**3. Installing requirements to run Python**
+
+    conda create --n "helio_hi"
+    conda activate helio_hi
+    pip install -r requirements.txt
     cd ELEvoHI/code
 
-**3. Setting up the ELEvoHI config file**
+**4. Setting up the ELEvoHI config file**
 
 The config.json file is stored in the ELEvoHI/code folder and needs to be edited to set the parameter for the event of interest. When running ELEvoHI it is copied to the according folder of the event to save it.
 
@@ -82,12 +86,6 @@ For realtime predictions delete this line.
 
     "silent": true
 If you want to avoid unnecessary terminal output, set this to true.
-
-**4. Installing requirements to run Python**
-
-    conda create --n "helio_hi"
-    conda activate helio_hi
-    pip install -r requirements.txt
 
 **5. Running ELEvoHI**
         
