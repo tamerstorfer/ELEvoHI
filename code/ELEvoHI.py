@@ -136,12 +136,12 @@ def main():
     event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
     
-    shutil.copy(basic_path + 'ELEvoHI/code/config.json', prediction_path)
-    
     # combines the time-elongation tracks into one average track on a equitemporal time-axis
     # includes standard deviation and saves a figure to the predictions folder
     track = merge_tracks(event_path, prediction_path)
-       
+    
+    shutil.copy(basic_path + 'ELEvoHI/code/config.json', prediction_path)
+    
     if phi_FPF:
         fpf_fit = fpf(track, startcut, endcut, prediction_path)
         phi = np.deg2rad(fpf_fit['phi_FPF'])
