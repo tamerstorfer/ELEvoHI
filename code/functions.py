@@ -1100,17 +1100,18 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     
     # interpolate time-elongation track to movie time-axis to display the tangent to the CME front
     # Convert datetime values to Unix timestamps in seconds
-    #x = (df['TRACK_DATE'] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
     elon = track["elongation"]
 
     # existing time axis from tracking
     track["time"] = pd.to_datetime(track["time"])
     x = (track["time"] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
+    
     # Create an interpolation function using interp1d
     interp_func = interp1d(x, elon, kind='linear', fill_value="extrapolate")
 
     # Convert new_time_axis to Unix timestamps in seconds
     time_a = pd.to_datetime(time_array)
+    
     # Convert datetime values to Unix timestamps in seconds
     x_movie = (time_a - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
     
@@ -1118,8 +1119,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     # Check which elements in x_new are greater than or equal to the last element of x
     smaller_than_last_x = np.where(x_movie <= x_last_element)[0]
-    
-    print('smaller_than_last_x: ', smaller_than_last_x)
     
     x_new = x_movie[smaller_than_last_x]
 
@@ -1132,26 +1131,10 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     start_angle = sta_lon
 
     # Define the length of the tangent
-    line_length = 1
+    line_length = 1.2
     
     elon_rad = np.deg2rad(interp_elon)
-    
-    print('elon: ', elon)
-    print('interp_elon: ', interp_elon)
-    print('elon_rad', elon_rad)
-    #print('interp. elon: ', len(interp_elon))
-    
-    fig = plt.figure(figsize = (10, 6))
-    
-    plt.plot(x_new, interp_elon, marker='s', color="orange")
-
-    plt.plot(x, elon, marker='x', color="black")
-    
-    plt.savefig('compare_elon.jpg', dpi=150, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
-
-    plt.close(fig)
-
-    
+   
     if movie:
         # Initialize your plot outside of the loop
         print('Making frames.')
@@ -1231,11 +1214,11 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                            alpha = 0.5, color = backcolor)
                 ax.set_ylim(0, 32)
                 
-            if k < len(elon_rad):
+            if k < len(elon_rad)-1:
                 ######
                 # Calculate the ending point of the line
                 end_radius = np.sqrt(line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
-                end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius)
+                end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius) - abs(start_angle)
 
                 # Calculate the coordinates of the line
                 line_x = np.array([start_angle, end_angle])
@@ -1248,9 +1231,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
             #save figure
             framestr = '%05i' % (k)
-            
-            print('k: ', k)
-            print('elon:', interp_elon[k])
 
             filename = prediction_path + '/frames/frame_' + framestr + '.jpg' 
 
@@ -1325,11 +1305,11 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                        alpha = 0.5, color = backcolor)
             ax.set_ylim(0, 32)
         
-        if k < len(elon_rad):
+        if k < len(elon_rad)-1:
             ######
             # Calculate the ending point of the line
             end_radius = np.sqrt(line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
-            end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius)  # You can modify this if you want a line at an angle
+            end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius) - abs(start_angle)
 
             # Calculate the coordinates of the line
             line_x = np.array([start_angle, end_angle])
