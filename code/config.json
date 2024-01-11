@@ -10,7 +10,7 @@
     "startcut": 0,
     "endcut": 30,
     "outer_system": false,
-    "movie": false,
+    "movie": true,
     "L1_ist_obs": "2020-12-10 02:10",
     "L1_isv_obs": 481,
     "silent": true

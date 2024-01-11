@@ -31,7 +31,7 @@ def main():
     AU = const.au.to_value('km')
     rsun = const.R_sun.to_value('km')
 
-    config = load_config('/Users/tanja/ELEvoHI/code/config.json')
+    config = load_config('config.json')
 
     basic_path = config['basic_path']
     pred_path = basic_path + 'ELEvoHI/predictions/'
@@ -462,7 +462,7 @@ def main():
                          'neptune_lon': neptune_lon
         }
         positions.update(outer_planets)
-      
+    print(positions)
               
     ############################################################################   
     # calculate angular separation of CME apex from each target
@@ -819,7 +819,7 @@ def main():
     
     R = rdrag /AU
 
-    prediction = elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit_counts, delta_values, positions, outer_system, prediction_path, movie=movie, timegrid=timegrid)
+    prediction = elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, movie=movie, timegrid=timegrid)
            
     if accsign < 0:
         print('')

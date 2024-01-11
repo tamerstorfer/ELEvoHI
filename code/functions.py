@@ -615,7 +615,7 @@ def elevo_analytic(R, f, halfwidth, delta, out=False, plot=False):
             print('distance d in AU: ', dvalue)
         return dvalue
    
-def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit_counts, delta_values, positions, outer_system, prediction_path, movie=False, timegrid = 1440):
+def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, movie=False, timegrid = 1440):
     # calculate ELEvo radial distances in direction of each target and
     # arrival times and speeds
     
@@ -627,7 +627,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit
     solo_available = availability['solo_available']
     psp_available = availability['psp_available']
     bepi_available = availability['bepi_available']
-    
     
     hit_sta = hit_counts['hit_sta']
     hit_stb = hit_counts['hit_stb']
@@ -1099,9 +1098,63 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit
     
     prediction = pd.DataFrame(pred)
     
+    # interpolate time-elongation track to movie time-axis to display the tangent to the CME front
+    # Convert datetime values to Unix timestamps in seconds
+    #x = (df['TRACK_DATE'] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
+    elon = track["elongation"]
+
+    # existing time axis from tracking
+    track["time"] = pd.to_datetime(track["time"])
+    x = (track["time"] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
+    # Create an interpolation function using interp1d
+    interp_func = interp1d(x, elon, kind='linear', fill_value="extrapolate")
+
+    # Convert new_time_axis to Unix timestamps in seconds
+    time_a = pd.to_datetime(time_array)
+    # Convert datetime values to Unix timestamps in seconds
+    x_movie = (time_a - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
+    
+    x_last_element = x.iloc[-1]  # Get the last element of track time
+
+    # Check which elements in x_new are greater than or equal to the last element of x
+    smaller_than_last_x = np.where(x_movie <= x_last_element)[0]
+    
+    print('smaller_than_last_x: ', smaller_than_last_x)
+    
+    x_new = x_movie[smaller_than_last_x]
+
+    # Interpolate elongation onto the common new time axis
+    # This new time axis ends with endcut defined in config file
+    interp_elon = interp_func(x_new)
+    
+    # Define the starting point of the tangent
+    start_radius = sta_r
+    start_angle = sta_lon
+
+    # Define the length of the tangent
+    line_length = 1
+    
+    elon_rad = np.deg2rad(interp_elon)
+    
+    print('elon: ', elon)
+    print('interp_elon: ', interp_elon)
+    print('elon_rad', elon_rad)
+    #print('interp. elon: ', len(interp_elon))
+    
+    fig = plt.figure(figsize = (10, 6))
+    
+    plt.plot(x_new, interp_elon, marker='s', color="orange")
+
+    plt.plot(x, elon, marker='x', color="black")
+    
+    plt.savefig('compare_elon.jpg', dpi=150, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+
+    plt.close(fig)
+
+    
     if movie:
         # Initialize your plot outside of the loop
-        print('Making movie.')
+        print('Making frames.')
 
         sns.set_context('talk')
         sns.set_style('darkgrid')
@@ -1110,6 +1163,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit
 
         # Loop over time frames
         for k in range(timegrid):
+            
+            print('k: ', k)
             
             t = (np.arange(181) * np.pi/180) - direction
             t1 = (np.arange(181) * np.pi/180)
@@ -1121,7 +1176,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit
             a = a/AU
             b = b/AU
             c = c/AU
-            R = R
+            #R = R
 
             xc = c * np.cos(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.sin(t)
             yc = c * np.sin(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.cos(t)
@@ -1175,20 +1230,39 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit
                 plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
                            alpha = 0.5, color = backcolor)
                 ax.set_ylim(0, 32)
+                
+            if k < len(elon_rad):
+                ######
+                # Calculate the ending point of the line
+                end_radius = np.sqrt(line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
+                end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius)
+
+                # Calculate the coordinates of the line
+                line_x = np.array([start_angle, end_angle])
+                line_y = np.array([start_radius, end_radius])
+
+                # Plot the HI tangent
+                ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+
+                ######
 
             #save figure
             framestr = '%05i' % (k)
+            
+            print('k: ', k)
+            print('elon:', interp_elon[k])
 
             filename = prediction_path + '/frames/frame_' + framestr + '.jpg' 
 
-            plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none')
+            plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
 
             plt.close(fig)
             
         os.system('ffmpeg -r 60 -i ' + prediction_path + '/frames/frame_%05d.jpg -b:v 5000k -r 60 ' + prediction_path + '/movie.mp4 -y')
         
     else:
-        a, b, c = elevo_analytic(rinit+100*rsun, f, halfwidth, 0., out=False, plot=True)
+        k = 100
+        a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., out=False, plot=True)
         a = a/AU
         b = b/AU
         c = c/AU
@@ -1208,11 +1282,11 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit
 
         r_ell = np.sqrt(xc ** 2 + yc ** 2)
 
-
         fig = plt.figure(figsize = (10, 10))
         backcolor = 'black'
 
         ax = fig.add_subplot(projection = 'polar')
+        ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
         ax.plot(theta_ell, r_ell, color = "tab:orange")
 
         # plot the position of the planets
@@ -1250,9 +1324,24 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, availability, hit
             plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
                        alpha = 0.5, color = backcolor)
             ax.set_ylim(0, 32)
+        
+        if k < len(elon_rad):
+            ######
+            # Calculate the ending point of the line
+            end_radius = np.sqrt(line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
+            end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius)  # You can modify this if you want a line at an angle
+
+            # Calculate the coordinates of the line
+            line_x = np.array([start_angle, end_angle])
+            line_y = np.array([start_radius, end_radius])
+
+            # Plot the HI tangent
+            ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+
+            ######
 
         filename = prediction_path + 'ELEvoHI_HEE.jpg'
-        plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none')
+        plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
 
         # s/c motion should be include
         #     #plot stereoa fov hi1/2    

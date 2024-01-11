@@ -23,12 +23,15 @@ Note, that the standard deviation derived from these measurements is not used wi
 
 Clone the ELEvoHI folder into the same directory where STEREO-HI-Data-Processing is located.
 
+    git clone https://github.com/tamerstorfer/ELEvoHI.git
+    cd ELEvoHI
+
 **3. Installing requirements to run Python**
 
     conda create --n "helio_hi"
     conda activate helio_hi
     pip install -r requirements.txt
-    cd ELEvoHI/code
+    cd code
 
 **4. Setting up the ELEvoHI config file**
 
@@ -133,9 +136,9 @@ If you want to avoid unnecessary terminal output, set this to true.
         
 When the parameters needed are set and the helio_hi environment is active run ELEvoHI as follows:
 
-    python, ELEvoHI.py
+    python ELEvoHI.py
 
-When ELEvoHI has finished, the result of the prediction is given in the terminal. Plots and figures can be found in the according folder under the defined prediction_path.
+When ELEvoHI has finished, the result of the prediction is given in the terminal. Plots and figures can be found in the according events folder under ELEvoHI/predictions.
 
 The ensemble version of ELEvoHI (Amerstorfer et al., 2018) will soon follow in Python. Also, the possibility of frontal deformation (Hinterreiter et al., 2021b) will be implemented again in Python.
 In case you find a bug or if you have any questions, please contact me (tanja.amerstorfer (at) geosphere.at).
