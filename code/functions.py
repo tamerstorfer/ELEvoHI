@@ -1131,9 +1131,10 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     start_angle = sta_lon
 
     # Define the length of the tangent
-    line_length = 1.2
+    tangent_length = 1.2
     
     elon_rad = np.deg2rad(interp_elon)
+    
    
     if movie:
         # Initialize your plot outside of the loop
@@ -1147,8 +1148,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         # Loop over time frames
         for k in range(timegrid):
             
-            print('k: ', k)
-            
             t = (np.arange(181) * np.pi/180) - direction
             t1 = (np.arange(181) * np.pi/180)
 
@@ -1159,7 +1158,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             a = a/AU
             b = b/AU
             c = c/AU
-            #R = R
 
             xc = c * np.cos(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.sin(t)
             yc = c * np.sin(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.cos(t)
@@ -1215,14 +1213,37 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 ax.set_ylim(0, 32)
                 
             if k < len(elon_rad)-1:
+                #print('k: ', k)
                 ######
                 # Calculate the ending point of the line
-                end_radius = np.sqrt(line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
-                end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius) - abs(start_angle)
+                end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+                
+                if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+                    print('version 1')
+                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                else:
+                    print('version 2')
+                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                    
+                end_angle = abs(beta) - abs(start_angle)
 
                 # Calculate the coordinates of the line
                 line_x = np.array([start_angle, end_angle])
                 line_y = np.array([start_radius, end_radius])
+                
+                # check these values when tangent shows weird behaviour!
+                #print('cos(elon): ', np.cos(elon_rad[k]), 'sta_r/line_length: ', sta_r/line_length)
+                #print('beta: ', beta)
+                #print('beta degrees: ', np.rad2deg(beta))
+                #print('elon_rad: ', elon_rad[k])
+                #print('elon: ', interp_elon[k])
+                #print('end_angle: ', np.rad2deg(end_angle))  
+                #print('start_angle: ', np.rad2deg(start_angle))
+                #print('arcsin(', line_length * np.sin(elon_rad[k]) / end_radius, ')')
+                #print('cos(elon): ', np.cos(elon_rad[k]))
+                #print('sqrt(): ', line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
+                #print('sta_r: ', sta_r)
+                #print('sta_lon: ', np.rad2deg(sta_lon))
 
                 # Plot the HI tangent
                 ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
@@ -1246,7 +1267,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         a = a/AU
         b = b/AU
         c = c/AU
-        R = R
         
         t = (np.arange(181) * np.pi/180) - direction
         t1 = (np.arange(181) * np.pi/180)
@@ -1308,12 +1328,34 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         if k < len(elon_rad)-1:
             ######
             # Calculate the ending point of the line
-            end_radius = np.sqrt(line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
-            end_angle = np.arcsin((line_length * np.sin(elon_rad[k])) / end_radius) - abs(start_angle)
+            end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+            
+            if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+                print('version 1')
+                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+            else:
+                print('version 2')
+                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                
+            end_angle = abs(beta) - abs(start_angle)
 
             # Calculate the coordinates of the line
             line_x = np.array([start_angle, end_angle])
             line_y = np.array([start_radius, end_radius])
+            
+            # check these values when tangent shows weird behaviour!
+            #print('cos(elon): ', np.cos(elon_rad[k]), 'sta_r/line_length: ', sta_r/line_length)
+            #print('beta: ', beta)
+            #print('beta degrees: ', np.rad2deg(beta))
+            #print('elon_rad: ', elon_rad[k])
+            #print('elon: ', interp_elon[k])
+            #print('end_angle: ', np.rad2deg(end_angle))  
+            #print('start_angle: ', np.rad2deg(start_angle))
+            #print('arcsin(', line_length * np.sin(elon_rad[k]) / end_radius, ')')
+            #print('cos(elon): ', np.cos(elon_rad[k]))
+            #print('sqrt(): ', line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
+            #print('sta_r: ', sta_r)
+            #print('sta_lon: ', np.rad2deg(sta_lon))
 
             # Plot the HI tangent
             ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
