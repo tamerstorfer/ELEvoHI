@@ -1219,10 +1219,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
                 
                 if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-                    print('version 1')
                     beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
                 else:
-                    print('version 2')
                     beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
                     
                 end_angle = abs(beta) - abs(start_angle)
@@ -1331,10 +1329,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
             
             if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-                print('version 1')
                 beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
             else:
-                print('version 2')
                 beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
                 
             end_angle = abs(beta) - abs(start_angle)
