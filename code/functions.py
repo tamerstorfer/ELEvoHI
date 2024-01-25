@@ -240,9 +240,9 @@ def fpf(track, startcut, endcut, prediction_path):
     text_loc = round(len(time)*0.7)
 
     # Coordinates for placing the text annotations
-    results_x, results_y = time[text_loc], round(max(ydata))*0.5
-    speed_x, speed_y = time[text_loc], round(max(ydata))*0.5 - round(max(ydata))*0.1
-    phi_x, phi_y = time[text_loc], round(max(ydata))*0.5 - round(max(ydata))*0.2
+    results_x, results_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata))
+    speed_x, speed_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - 0.5
+    phi_x, phi_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - 1
 
     # Text annotations to the plot
     ax.text(results_x, results_y, results_text, fontsize=16, path_effects=underlined_effect)
@@ -1133,6 +1133,9 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     # Define the length of the tangent
     tangent_length = 1.2
     
+    # Define the length of the HI fov shading
+    fov_length = 1
+    
     elon_rad = np.deg2rad(interp_elon)
     
    
@@ -1212,42 +1215,92 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                            alpha = 0.5, color = backcolor)
                 ax.set_ylim(0, 32)
                 
+            #######################################################
+            # shade HI field of view
+            # HI1 field of view:
+            hi1_fov_start = np.deg2rad(4.)
+            hi1_fov_end = np.deg2rad(24.)
+
+            #---- inner HI1 fov ------
+            end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
+            
+            if sta_lon < 0:
+                end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
+            else:
+                end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
+            
+            line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
+            line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
+            #---- outer HI1 fov ------
+            end_hi1_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_end))
+            
+            if sta_lon < 0:
+                end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
+            else:
+                end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
+                
+            line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
+            line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
+
+            # HI2 field of view:
+            hi2_fov_start = np.deg2rad(18.)
+            hi2_fov_end = np.deg2rad(88.)
+
+            #---- inner HI2 fov ------
+            end_hi2_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_start))
+            
+            if sta_lon < 0:
+                end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
+            else:
+                end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
+            
+            line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
+            line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
+            
+            #---- outer HI2 fov ------
+            end_hi2_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_end))
+            
+            if sta_lon < 0:
+                end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
+            else:
+                end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
+            
+            line_x_hi2_outer = np.array([start_angle, end_hi2_outerangle])
+            line_y_hi2_outer = np.array([start_radius, end_hi2_outerradius])
+
+            # Shade the region between the two lines
+            ax.plot(line_x_hi1_inner, line_y_hi1_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+            ax.plot(line_x_hi1_outer, line_y_hi1_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+
+            ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+            ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+
             if k < len(elon_rad)-1:
                 #print('k: ', k)
                 ######
-                # Calculate the ending point of the line
+                # Calculate the ending point of the tangent
+
                 end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
-                
+
+                # angle of end point of tangent
                 if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+                    #print('version 1')
                     beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
                 else:
+                    #print('version 2')
                     beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
-                    
-                end_angle = abs(beta) - abs(start_angle)
+
+                if sta_lon < 0:
+                    end_angle = abs(beta) - abs(start_angle)
+                else:
+                    end_angle = (abs(beta) - abs(start_angle)) * (-1)
 
                 # Calculate the coordinates of the line
                 line_x = np.array([start_angle, end_angle])
                 line_y = np.array([start_radius, end_radius])
-                
-                # check these values when tangent shows weird behaviour!
-                #print('cos(elon): ', np.cos(elon_rad[k]), 'sta_r/line_length: ', sta_r/line_length)
-                #print('beta: ', beta)
-                #print('beta degrees: ', np.rad2deg(beta))
-                #print('elon_rad: ', elon_rad[k])
-                #print('elon: ', interp_elon[k])
-                #print('end_angle: ', np.rad2deg(end_angle))  
-                #print('start_angle: ', np.rad2deg(start_angle))
-                #print('arcsin(', line_length * np.sin(elon_rad[k]) / end_radius, ')')
-                #print('cos(elon): ', np.cos(elon_rad[k]))
-                #print('sqrt(): ', line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
-                #print('sta_r: ', sta_r)
-                #print('sta_lon: ', np.rad2deg(sta_lon))
-
                 # Plot the HI tangent
                 ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
-
-                ######
-
+                             
             #save figure
             framestr = '%05i' % (k)
 
@@ -1257,109 +1310,155 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
             plt.close(fig)
             
-        os.system('ffmpeg -r 60 -i ' + prediction_path + '/frames/frame_%05d.jpg -b:v 5000k -r 60 ' + prediction_path + '/movie.mp4 -y')
+        #os.system('ffmpeg -r 60 -i ' + prediction_path + '/frames/frame_%05d.jpg -b:v 5000k -r 60 ' + prediction_path + '/movie.mp4 -y')
         
+    
+    k = 100
+    a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., out=False, plot=True)
+    a = a/AU
+    b = b/AU
+    c = c/AU
+    
+    t = (np.arange(181) * np.pi/180) - direction
+    t1 = (np.arange(181) * np.pi/180)
+
+    sns.set_context('talk')
+    sns.set_style('darkgrid'),#{'grid.linestyle': ':', 'grid.color': '.35'}) 
+    #sns.set_style('white',{'grid.linestyle': ':', 'grid.color': '.35'})
+
+    xc = c * np.cos(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.sin(t)
+    yc = c * np.sin(direction) + ((a * b)/np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.cos(t)
+
+    theta_ell = np.arctan2(yc, xc)
+
+    r_ell = np.sqrt(xc ** 2 + yc ** 2)
+
+    fig = plt.figure(figsize = (10, 10))
+    backcolor = 'black'
+
+    ax = fig.add_subplot(projection = 'polar')
+    ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
+    ax.plot(theta_ell, r_ell, color = "tab:orange")
+
+    # plot the position of the planets
+    ax.scatter(mercury_lon, mercury_r, color = 'dimgrey', marker = 'o', label = 'Point')
+    ax.scatter(venus_lon, venus_r, color = 'orange', marker = 'o', label = 'Point')
+    ax.scatter(earth_lon, earth_r, color = 'mediumseagreen', marker = 'o', label = 'Point')
+    ax.scatter(mars_lon, mars_r, color = 'orangered', marker = 'o', label = 'Point')
+
+    # plot the position of the s/c
+    if sta_available:
+        ax.scatter(sta_lon, sta_r, color = 'red', marker = 's', label = 'Point')
+    if stb_available:
+        ax.scatter(stb_lon, stb_r, color = 'blue', marker = 's', label = 'Point')
+    if mes_available:
+        ax.scatter(mes_lon, mes_r, color = 'dimgrey', marker = 's', label = 'Point')
+    if vex_available:
+        ax.scatter(vex_lon, vex_r, color = 'orange', marker = 's', label = 'Point')
+    if psp_available:
+        ax.scatter(psp_lon, psp_r, color = 'black', marker = 's', label = 'Point')
+    if solo_available:
+        ax.scatter(solo_lon, solo_r, color = 'coral', marker = 's', label = 'Point')
+    if bepi_available:
+        ax.scatter(bepi_lon, bepi_r, color = 'blue', marker = 's', label = 'Point')
+
+    if outer_system == 0:
+        plt.rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12,
+                    alpha = 0.5, color = backcolor)
+        ax.set_ylim(0, 1.2) 
     else:
-        k = 100
-        a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., out=False, plot=True)
-        a = a/AU
-        b = b/AU
-        c = c/AU
+        ax.scatter(jupiter_lon, jupiter_r, color = 'darkgoldenrod', marker = 'o', label = 'Point')
+        ax.scatter(saturn_lon, saturn_r, color = 'palegreen', marker = 'o', label = 'Point')
+        ax.scatter(uranus_lon, uranus_r, color = 'cyan', marker = 'o', label = 'Point')
+        ax.scatter(neptune_lon, neptune_r, color = 'cornflowerblue', marker = 'o', label = 'Point')
+
+        plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
+                    alpha = 0.5, color = backcolor)
+        ax.set_ylim(0, 32)
+    
+    #######################################################
+    # shade HI field of view
+    # HI1 field of view:
+    hi1_fov_start = np.deg2rad(4.)
+    hi1_fov_end = np.deg2rad(24.)
+
+    #---- inner HI1 fov ------
+    end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
+    
+    if sta_lon < 0:
+        end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
+    else:
+        end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
+    
+    line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
+    line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
+    #---- outer HI1 fov ------
+    end_hi1_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_end))
+    
+    if sta_lon < 0:
+        end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
+    else:
+        end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
         
-        t = (np.arange(181) * np.pi/180) - direction
-        t1 = (np.arange(181) * np.pi/180)
+    line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
+    line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
 
-        sns.set_context('talk')
-        sns.set_style('darkgrid'),#{'grid.linestyle': ':', 'grid.color': '.35'}) 
-        #sns.set_style('white',{'grid.linestyle': ':', 'grid.color': '.35'})
+    # HI2 field of view:
+    hi2_fov_start = np.deg2rad(18.)
+    hi2_fov_end = np.deg2rad(88.)
 
-        xc = c * np.cos(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.sin(t)
-        yc = c * np.sin(direction) + ((a * b)/np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.cos(t)
+    #---- inner HI2 fov ------
+    end_hi2_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_start))
+    
+    if sta_lon < 0:
+        end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
+    else:
+        end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
+    
+    line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
+    line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
+    
+    #---- outer HI2 fov ------
+    end_hi2_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_end))
+    
+    if sta_lon < 0:
+        end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
+    else:
+        end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
+    
+    line_x_hi2_outer = np.array([start_angle, end_hi2_outerangle])
+    line_y_hi2_outer = np.array([start_radius, end_hi2_outerradius])
 
-        theta_ell = np.arctan2(yc, xc)
+    # Shade the region between the two lines
+    ax.plot(line_x_hi1_inner, line_y_hi1_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+    ax.plot(line_x_hi1_outer, line_y_hi1_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
 
-        r_ell = np.sqrt(xc ** 2 + yc ** 2)
-
-        fig = plt.figure(figsize = (10, 10))
-        backcolor = 'black'
-
-        ax = fig.add_subplot(projection = 'polar')
-        ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
-        ax.plot(theta_ell, r_ell, color = "tab:orange")
-
-        # plot the position of the planets
-        ax.scatter(mercury_lon, mercury_r, color = 'dimgrey', marker = 'o', label = 'Point')
-        ax.scatter(venus_lon, venus_r, color = 'orange', marker = 'o', label = 'Point')
-        ax.scatter(earth_lon, earth_r, color = 'mediumseagreen', marker = 'o', label = 'Point')
-        ax.scatter(mars_lon, mars_r, color = 'orangered', marker = 'o', label = 'Point')
-
-        # plot the position of the s/c
-        if sta_available:
-            ax.scatter(sta_lon, sta_r, color = 'red', marker = 's', label = 'Point')
-        if stb_available:
-            ax.scatter(stb_lon, stb_r, color = 'blue', marker = 's', label = 'Point')
-        if mes_available:
-            ax.scatter(mes_lon, mes_r, color = 'dimgrey', marker = 's', label = 'Point')
-        if vex_available:
-            ax.scatter(vex_lon, vex_r, color = 'orange', marker = 's', label = 'Point')
-        if psp_available:
-            ax.scatter(psp_lon, psp_r, color = 'black', marker = 's', label = 'Point')
-        if solo_available:
-            ax.scatter(solo_lon, solo_r, color = 'coral', marker = 's', label = 'Point')
-        if bepi_available:
-            ax.scatter(bepi_lon, bepi_r, color = 'blue', marker = 's', label = 'Point')
-
-        if outer_system == 0:
-            plt.rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12,
-                       alpha = 0.5, color = backcolor)
-            ax.set_ylim(0, 1.2) 
+    ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+    ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+    
+    if k < len(elon_rad)-1:
+        ######
+        # Calculate the ending point of the line
+        end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+        
+        if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
         else:
-            ax.scatter(jupiter_lon, jupiter_r, color = 'darkgoldenrod', marker = 'o', label = 'Point')
-            ax.scatter(saturn_lon, saturn_r, color = 'palegreen', marker = 'o', label = 'Point')
-            ax.scatter(uranus_lon, uranus_r, color = 'cyan', marker = 'o', label = 'Point')
-            ax.scatter(neptune_lon, neptune_r, color = 'cornflowerblue', marker = 'o', label = 'Point')
-
-            plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
-                       alpha = 0.5, color = backcolor)
-            ax.set_ylim(0, 32)
-        
-        if k < len(elon_rad)-1:
-            ######
-            # Calculate the ending point of the line
-            end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
             
-            if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-            else:
-                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
-                
-            end_angle = abs(beta) - abs(start_angle)
+        end_angle = abs(beta) - abs(start_angle)
 
-            # Calculate the coordinates of the line
-            line_x = np.array([start_angle, end_angle])
-            line_y = np.array([start_radius, end_radius])
-            
-            # check these values when tangent shows weird behaviour!
-            #print('cos(elon): ', np.cos(elon_rad[k]), 'sta_r/line_length: ', sta_r/line_length)
-            #print('beta: ', beta)
-            #print('beta degrees: ', np.rad2deg(beta))
-            #print('elon_rad: ', elon_rad[k])
-            #print('elon: ', interp_elon[k])
-            #print('end_angle: ', np.rad2deg(end_angle))  
-            #print('start_angle: ', np.rad2deg(start_angle))
-            #print('arcsin(', line_length * np.sin(elon_rad[k]) / end_radius, ')')
-            #print('cos(elon): ', np.cos(elon_rad[k]))
-            #print('sqrt(): ', line_length**2 + sta_r**2 - 2. * line_length * sta_r * np.cos(elon_rad[k]))
-            #print('sta_r: ', sta_r)
-            #print('sta_lon: ', np.rad2deg(sta_lon))
+        # Calculate the coordinates of the line
+        line_x = np.array([start_angle, end_angle])
+        line_y = np.array([start_radius, end_radius])
 
-            # Plot the HI tangent
-            ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+        # Plot the HI tangent
+        ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
 
-            ######
+        ######
 
-        filename = prediction_path + 'ELEvoHI_HEE.jpg'
-        plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+    filename = prediction_path + 'ELEvoHI_HEE.jpg'
+    plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
 
         # s/c motion should be include
         #     #plot stereoa fov hi1/2    
