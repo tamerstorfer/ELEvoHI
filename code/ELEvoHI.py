@@ -462,7 +462,6 @@ def main():
                          'neptune_lon': neptune_lon
         }
         positions.update(outer_planets)
-    print(positions)
               
     ############################################################################   
     # calculate angular separation of CME apex from each target
