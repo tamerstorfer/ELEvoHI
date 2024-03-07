@@ -17,6 +17,7 @@ import seaborn as sns
 import json
 import pickle
 import logging
+import sys
 
 # Constants
 AU = const.au.to_value('km')
@@ -43,13 +44,13 @@ def merge_tracks(event_path, prediction_path):
     # Create an array to store mean values
     mean_values = np.zeros(30)
     std_values = np.zeros(30)
-
-    interpolated_tracks = np.zeros((5,30))
     
     plt.figure(figsize=(10, 6), facecolor='white')
 
     # List all files in the folder with .csv ending
     files = [file for file in os.listdir(event_path) if file.endswith('.csv')]
+    
+    interpolated_tracks = np.zeros((len(files),30))
 
     # Calculate common new time axis
     all_time_data = []
@@ -415,10 +416,7 @@ def DBMfitting(time, distance_au, prediction_path, startfit = 1, endfit = 20, si
                     print('positive')
             else:
                 continue
-            #print('i: ', i)
-            #print('Gamma: ', parameters)
-            #print('Windspeed: ', swspeed)
-            #print('Residuals: ', np.mean(residuals_/rsun))
+
         else:
             # Perform the optimization
             result = minimize(cost_functionneg, initial_guess, method='Nelder-Mead')
@@ -1143,327 +1141,184 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         # Initialize your plot outside of the loop
         print('Making frames.')
 
-        sns.set_context('talk')
-        sns.set_style('darkgrid')
-
         if os.path.isdir(prediction_path + '/frames') == False: os.mkdir(prediction_path + '/frames')
 
         # Loop over time frames
-        for k in range(timegrid):
-            
-            t = (np.arange(181) * np.pi/180) - direction
-            t1 = (np.arange(181) * np.pi/180)
-
-            fig = plt.figure(figsize=(10, 10))
-            backcolor = 'black'
-
-            a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., out=False, plot=True)
-            a = a/AU
-            b = b/AU
-            c = c/AU
-
-            xc = c * np.cos(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.sin(t)
-            yc = c * np.sin(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.cos(t)
-
-            theta_ell = np.arctan2(yc, xc)
-            r_ell = np.sqrt(xc ** 2 + yc ** 2)
-
-            if np.min(r_ell) > 1.2:
-                break
-
-            # Create a subplot for the current frame
-            ax = fig.add_subplot(projection='polar')
-
-            # Set the title according to the time step
-            ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
-
-            ax.plot(theta_ell, r_ell, color="tab:orange")
-
-            # plot the position of the planets
-            ax.scatter(mercury_lon, mercury_r, color = 'dimgrey', marker = 'o', label = 'Point')
-            ax.scatter(venus_lon, venus_r, color = 'orange', marker = 'o', label = 'Point')
-            ax.scatter(earth_lon, earth_r, color = 'mediumseagreen', marker = 'o', label = 'Point')
-            ax.scatter(mars_lon, mars_r, color = 'orangered', marker = 'o', label = 'Point')
-
-            # plot the position of the s/c
-            if sta_available:
-                ax.scatter(sta_lon, sta_r, color = 'red', marker = 's', label = 'Point')
-            if stb_available:
-                ax.scatter(stb_lon, stb_r, color = 'blue', marker = 's', label = 'Point')
-            if mes_available:
-                ax.scatter(mes_lon, mes_r, color = 'dimgrey', marker = 's', label = 'Point')
-            if vex_available:
-                ax.scatter(vex_lon, vex_r, color = 'orange', marker = 's', label = 'Point')
-            if psp_available:
-                ax.scatter(psp_lon, psp_r, color = 'black', marker = 's', label = 'Point')
-            if solo_available:
-                ax.scatter(solo_lon, solo_r, color = 'coral', marker = 's', label = 'Point')
-            if bepi_available:
-                ax.scatter(bepi_lon, bepi_r, color = 'blue', marker = 's', label = 'Point')
-
-            if outer_system == 0:
-                ax.set_rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12,
-                           alpha = 0.5, color = backcolor)
-                ax.set_ylim(0, 1.2) 
-            else:
-                ax.scatter(jupiter_lon, jupiter_r, color = 'darkgoldenrod', marker = 'o', label = 'Point')
-                ax.scatter(saturn_lon, saturn_r, color = 'palegreen', marker = 'o', label = 'Point')
-                ax.scatter(uranus_lon, uranus_r, color = 'cyan', marker = 'o', label = 'Point')
-                ax.scatter(neptune_lon, neptune_r, color = 'cornflowerblue', marker = 'o', label = 'Point')
-
-                plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
-                           alpha = 0.5, color = backcolor)
-                ax.set_ylim(0, 32)
-                
-            #######################################################
-            # shade HI field of view
-            # HI1 field of view:
-            hi1_fov_start = np.deg2rad(4.)
-            hi1_fov_end = np.deg2rad(24.)
-
-            #---- inner HI1 fov ------
-            end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
-            
-            if sta_lon < 0:
-                end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
-            else:
-                end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
-            
-            line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
-            line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
-            #---- outer HI1 fov ------
-            end_hi1_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_end))
-            
-            if sta_lon < 0:
-                end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
-            else:
-                end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
-                
-            line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
-            line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
-
-            # HI2 field of view:
-            hi2_fov_start = np.deg2rad(18.)
-            hi2_fov_end = np.deg2rad(88.)
-
-            #---- inner HI2 fov ------
-            end_hi2_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_start))
-            
-            if sta_lon < 0:
-                end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
-            else:
-                end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
-            
-            line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
-            line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
-            
-            #---- outer HI2 fov ------
-            end_hi2_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_end))
-            
-            if sta_lon < 0:
-                end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
-            else:
-                end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
-            
-            line_x_hi2_outer = np.array([start_angle, end_hi2_outerangle])
-            line_y_hi2_outer = np.array([start_radius, end_hi2_outerradius])
-
-            # Shade the region between the two lines
-            ax.plot(line_x_hi1_inner, line_y_hi1_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-            ax.plot(line_x_hi1_outer, line_y_hi1_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-
-            ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-            ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-
-            if k < len(elon_rad)-1:
-                #print('k: ', k)
-                ######
-                # Calculate the ending point of the tangent
-
-                end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
-
-                # angle of end point of tangent
-                if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-                    #print('version 1')
-                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-                else:
-                    #print('version 2')
-                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
-
-                if sta_lon < 0:
-                    end_angle = abs(beta) - abs(start_angle)
-                else:
-                    end_angle = (abs(beta) - abs(start_angle)) * (-1)
-
-                # Calculate the coordinates of the line
-                line_x = np.array([start_angle, end_angle])
-                line_y = np.array([start_radius, end_radius])
-                # Plot the HI tangent
-                ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
-                             
-            #save figure
-            framestr = '%05i' % (k)
-
-            filename = prediction_path + '/frames/frame_' + framestr + '.jpg' 
-
-            plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
-
-            plt.close(fig)
-            
-        #os.system('ffmpeg -r 60 -i ' + prediction_path + '/frames/frame_%05d.jpg -b:v 5000k -r 60 ' + prediction_path + '/movie.mp4 -y')
+    for k in range(timegrid):
         
-    
-    k = 100
-    a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., out=False, plot=True)
-    a = a/AU
-    b = b/AU
-    c = c/AU
-    
-    t = (np.arange(181) * np.pi/180) - direction
-    t1 = (np.arange(181) * np.pi/180)
-
-    sns.set_context('talk')
-    sns.set_style('darkgrid'),#{'grid.linestyle': ':', 'grid.color': '.35'}) 
-    #sns.set_style('white',{'grid.linestyle': ':', 'grid.color': '.35'})
-
-    xc = c * np.cos(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.sin(t)
-    yc = c * np.sin(direction) + ((a * b)/np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.cos(t)
-
-    theta_ell = np.arctan2(yc, xc)
-
-    r_ell = np.sqrt(xc ** 2 + yc ** 2)
-
-    fig = plt.figure(figsize = (10, 10))
-    backcolor = 'black'
-
-    ax = fig.add_subplot(projection = 'polar')
-    ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
-    ax.plot(theta_ell, r_ell, color = "tab:orange")
-
-    # plot the position of the planets
-    ax.scatter(mercury_lon, mercury_r, color = 'dimgrey', marker = 'o', label = 'Point')
-    ax.scatter(venus_lon, venus_r, color = 'orange', marker = 'o', label = 'Point')
-    ax.scatter(earth_lon, earth_r, color = 'mediumseagreen', marker = 'o', label = 'Point')
-    ax.scatter(mars_lon, mars_r, color = 'orangered', marker = 'o', label = 'Point')
-
-    # plot the position of the s/c
-    if sta_available:
-        ax.scatter(sta_lon, sta_r, color = 'red', marker = 's', label = 'Point')
-    if stb_available:
-        ax.scatter(stb_lon, stb_r, color = 'blue', marker = 's', label = 'Point')
-    if mes_available:
-        ax.scatter(mes_lon, mes_r, color = 'dimgrey', marker = 's', label = 'Point')
-    if vex_available:
-        ax.scatter(vex_lon, vex_r, color = 'orange', marker = 's', label = 'Point')
-    if psp_available:
-        ax.scatter(psp_lon, psp_r, color = 'black', marker = 's', label = 'Point')
-    if solo_available:
-        ax.scatter(solo_lon, solo_r, color = 'coral', marker = 's', label = 'Point')
-    if bepi_available:
-        ax.scatter(bepi_lon, bepi_r, color = 'blue', marker = 's', label = 'Point')
-
-    if outer_system == 0:
-        plt.rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12,
-                    alpha = 0.5, color = backcolor)
-        ax.set_ylim(0, 1.2) 
-    else:
-        ax.scatter(jupiter_lon, jupiter_r, color = 'darkgoldenrod', marker = 'o', label = 'Point')
-        ax.scatter(saturn_lon, saturn_r, color = 'palegreen', marker = 'o', label = 'Point')
-        ax.scatter(uranus_lon, uranus_r, color = 'cyan', marker = 'o', label = 'Point')
-        ax.scatter(neptune_lon, neptune_r, color = 'cornflowerblue', marker = 'o', label = 'Point')
-
-        plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
-                    alpha = 0.5, color = backcolor)
-        ax.set_ylim(0, 32)
-    
-    #######################################################
-    # shade HI field of view
-    # HI1 field of view:
-    hi1_fov_start = np.deg2rad(4.)
-    hi1_fov_end = np.deg2rad(24.)
-
-    #---- inner HI1 fov ------
-    end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
-    
-    if sta_lon < 0:
-        end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
-    else:
-        end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
-    
-    line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
-    line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
-    #---- outer HI1 fov ------
-    end_hi1_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_end))
-    
-    if sta_lon < 0:
-        end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
-    else:
-        end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
+        sns.set_context('talk')
+        sns.set_style('darkgrid')
         
-    line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
-    line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
-
-    # HI2 field of view:
-    hi2_fov_start = np.deg2rad(18.)
-    hi2_fov_end = np.deg2rad(88.)
-
-    #---- inner HI2 fov ------
-    end_hi2_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_start))
-    
-    if sta_lon < 0:
-        end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
-    else:
-        end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
-    
-    line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
-    line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
-    
-    #---- outer HI2 fov ------
-    end_hi2_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_end))
-    
-    if sta_lon < 0:
-        end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
-    else:
-        end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
-    
-    line_x_hi2_outer = np.array([start_angle, end_hi2_outerangle])
-    line_y_hi2_outer = np.array([start_radius, end_hi2_outerradius])
-
-    # Shade the region between the two lines
-    ax.plot(line_x_hi1_inner, line_y_hi1_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-    ax.plot(line_x_hi1_outer, line_y_hi1_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-
-    ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-    ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-    
-    if k < len(elon_rad)-1:
-        ######
-        # Calculate the ending point of the line
-        end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+        if not movie:
+            k=200
         
-        if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+        t = (np.arange(181) * np.pi/180) - direction
+        t1 = (np.arange(181) * np.pi/180)
+
+        fig = plt.figure(figsize=(10, 10))
+        backcolor = 'black'
+
+        a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., out=False, plot=True)
+        a = a/AU
+        b = b/AU
+        c = c/AU
+
+        xc = c * np.cos(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.sin(t)
+        yc = c * np.sin(direction) + ((a * b) / np.sqrt((b * np.cos(t1)) ** 2 + (a * np.sin(t1)) ** 2)) * np.cos(t)
+
+        theta_ell = np.arctan2(yc, xc)
+        r_ell = np.sqrt(xc ** 2 + yc ** 2)
+
+        if np.min(r_ell) > 1.2:
+            break
+
+        # Create a subplot for the current frame
+        ax = fig.add_subplot(projection='polar')
+
+        # Set the title according to the time step
+        ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
+
+        ax.plot(theta_ell, r_ell, color="tab:orange")
+
+        # plot the position of the planets
+        ax.scatter(mercury_lon, mercury_r, color = 'dimgrey', marker = 'o', label = 'Point')
+        ax.scatter(venus_lon, venus_r, color = 'orange', marker = 'o', label = 'Point')
+        ax.scatter(earth_lon, earth_r, color = 'mediumseagreen', marker = 'o', label = 'Point')
+        ax.scatter(mars_lon, mars_r, color = 'orangered', marker = 'o', label = 'Point')
+
+        # plot the position of the s/c
+        if sta_available:
+            ax.scatter(sta_lon, sta_r, color = 'red', marker = 's', label = 'Point')
+        if stb_available:
+            ax.scatter(stb_lon, stb_r, color = 'blue', marker = 's', label = 'Point')
+        if mes_available:
+            ax.scatter(mes_lon, mes_r, color = 'dimgrey', marker = 's', label = 'Point')
+        if vex_available:
+            ax.scatter(vex_lon, vex_r, color = 'orange', marker = 's', label = 'Point')
+        if psp_available:
+            ax.scatter(psp_lon, psp_r, color = 'black', marker = 's', label = 'Point')
+        if solo_available:
+            ax.scatter(solo_lon, solo_r, color = 'coral', marker = 's', label = 'Point')
+        if bepi_available:
+            ax.scatter(bepi_lon, bepi_r, color = 'blue', marker = 's', label = 'Point')
+
+        if outer_system == 0:
+            ax.set_rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12,
+                        alpha = 0.5, color = backcolor)
+            ax.set_ylim(0, 1.2) 
         else:
-            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+            ax.scatter(jupiter_lon, jupiter_r, color = 'darkgoldenrod', marker = 'o', label = 'Point')
+            ax.scatter(saturn_lon, saturn_r, color = 'palegreen', marker = 'o', label = 'Point')
+            ax.scatter(uranus_lon, uranus_r, color = 'cyan', marker = 'o', label = 'Point')
+            ax.scatter(neptune_lon, neptune_r, color = 'cornflowerblue', marker = 'o', label = 'Point')
+
+            plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
+                        alpha = 0.5, color = backcolor)
+            ax.set_ylim(0, 32)
             
-        end_angle = abs(beta) - abs(start_angle)
+        #######################################################
+        # shade HI field of view
+        # HI1 field of view:
+        hi1_fov_start = np.deg2rad(4.)
+        hi1_fov_end = np.deg2rad(24.)
 
-        # Calculate the coordinates of the line
-        line_x = np.array([start_angle, end_angle])
-        line_y = np.array([start_radius, end_radius])
+        #---- inner HI1 fov ------
+        end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
+        
+        if sta_lon < 0:
+            end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
+        else:
+            end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
+        
+        line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
+        line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
+        #---- outer HI1 fov ------
+        end_hi1_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_end))
+        
+        if sta_lon < 0:
+            end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
+        else:
+            end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
+            
+        line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
+        line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
 
-        # Plot the HI tangent
-        ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+        # HI2 field of view:
+        hi2_fov_start = np.deg2rad(18.)
+        hi2_fov_end = np.deg2rad(88.)
 
-        ######
+        #---- inner HI2 fov ------
+        end_hi2_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_start))
+        
+        if sta_lon < 0:
+            end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
+        else:
+            end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
+        
+        line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
+        line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
+        
+        #---- outer HI2 fov ------
+        end_hi2_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_end))
+        
+        if sta_lon < 0:
+            end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
+        else:
+            end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
+        
+        line_x_hi2_outer = np.array([start_angle, end_hi2_outerangle])
+        line_y_hi2_outer = np.array([start_radius, end_hi2_outerradius])
 
-    filename = prediction_path + 'ELEvoHI_HEE.jpg'
-    plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+        # Shade the region between the two lines
+        ax.plot(line_x_hi1_inner, line_y_hi1_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+        ax.plot(line_x_hi1_outer, line_y_hi1_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
 
-        # s/c motion should be include
-        #     #plot stereoa fov hi1/2    
-        #    hp.plot_stereo_hi_fov(sta,frame_time_num, sta_timeind, ax,'A')
-        # hp seems to be heliocats but where can I get it?
+        ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+        ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+
+        if k < len(elon_rad)-1:
+            #print('k: ', k)
+            ######
+            # Calculate the ending point of the tangent
+
+            end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+
+            # angle of end point of tangent
+            if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+                #print('version 1')
+                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+            else:
+                #print('version 2')
+                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+
+            if sta_lon < 0:
+                end_angle = abs(beta) - abs(start_angle)
+            else:
+                end_angle = (abs(beta) - abs(start_angle)) * (-1)
+
+            # Calculate the coordinates of the line
+            line_x = np.array([start_angle, end_angle])
+            line_y = np.array([start_radius, end_radius])
+            # Plot the HI tangent
+            ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+            
+        if k == 200:
+        #save single figure
+            filename = prediction_path + 'ELEvoHI_HEE_m.jpg'
+            plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+            if not movie:
+                plt.close(fig)
+                break
+            
+        if movie:                
+        #save frames
+            framestr = '%05i' % (k)
+            filename = prediction_path + '/frames/frame_' + framestr + '.jpg' 
+            plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+            plt.close(fig)
+
+    if movie:    
+        os.system('ffmpeg -r 60 -i ' + prediction_path + '/frames/frame_%05d.jpg -b:v 5000k -r 60 ' + prediction_path + '/movie.mp4 -y')
     
     return prediction
 
@@ -1478,27 +1333,27 @@ def assess_prediction(prediction, target, is_time, is_speed):
         formatted_hours = "{:.2f}".format(arrival_dt)
         
         print('======================================================')
-        print(f' ELEvoHI accuracy for {target}')
+        print(f'ELEvoHI accuracy for {target}')
 
         print('------------------------------------------------------')
 
         if arrival_dt < 0:
-            print('|| Predicted arrival is earlier than observed.      ||')
-            print('|| Difference: ', formatted_hours, 'hours                          ||')
+            print('Predicted arrival is earlier than observed.')
+            print('Difference: ', formatted_hours, 'hours')
         else:   
-            print('|| Predicted arrival is later than observed.        ||')
-            print('|| Difference: ', formatted_hours, 'hours                          ||')
+            print(' Predicted arrival is later than observed.')
+            print('Difference: ', formatted_hours, 'hours')
 
         if isinstance(is_speed, int):
             arrspeed_target = prediction.loc[prediction['target'] == target, 'arrival speed [km/s]'].values[0]        
             arrival_dv = arrspeed_target - is_speed
             
             if arrival_dv < 0:
-                print('|| Predicted arrival speed is lower than observed.  ||')
-                print('|| Difference: ', round(arrival_dv), ' km/s                            ||')
+                print('Predicted arrival speed is lower than observed.')
+                print('Difference: ', round(arrival_dv), ' km/s')
             else:
-                print('|| Predicted arrival speed is higher than observed. ||')
-                print('|| Difference: ', round(arrival_dv), ' km/s                            ||')
+                print('Predicted arrival speed is higher than observed.')
+                print('Difference: ', round(arrival_dv), ' km/s')
 
             print('======================================================')
         else:

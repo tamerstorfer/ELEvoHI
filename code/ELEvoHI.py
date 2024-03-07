@@ -134,6 +134,7 @@ def main():
     
     year = eventdate[:4]
     event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
+    #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
     
     # combines the time-elongation tracks into one average track on a equitemporal time-axis
@@ -422,14 +423,14 @@ def main():
                'mes_r': mes_r
         }
         # Adding the new entry using update()
-        positions.update(add_vex)
+        positions.update(add_mes)
     if vex_available:
         # New entry as a dictionary
         add_vex = {'vex_lon': vex_lon,
                'vex_r': vex_r
         }
         # Adding the new entry using update()
-        positions.update(add_solo) 
+        positions.update(add_vex) 
     if solo_available:
         # New entry as a dictionary
         add_solo = {'solo_lon': solo_lon,
