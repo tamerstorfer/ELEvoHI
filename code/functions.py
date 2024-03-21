@@ -18,6 +18,7 @@ import json
 import pickle
 import logging
 import sys
+import pdb
 
 # Constants
 AU = const.au.to_value('km')
@@ -716,6 +717,9 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     
     # Calculate time differences needed for deriving the speeds
     time_diff = np.diff(tnum)
+    
+    hit = 0
+    
 
     if sta_available == 1 and hit_sta == 1:
         ############# STEREO-A #############
@@ -735,6 +739,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("------------------------------------")
         print("Arrival time at STEREO-A:", arrtime_sta.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at STEREO-A: {arrspeed_sta:.0f} km/s")
+        
+        hit = 1
         
         pred.append({"target": "STEREO-A", "arrival time [UT]": arrtime_sta.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_sta, 0))})
@@ -757,6 +763,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("------------------------------------")
         print("Arrival time at STEREO-B:", arrtime_stb.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at STEREO-B: {arrspeed_stb:.0f} km/s")
+        
+        hit = 1
 
         pred.append({"target": "STEREO-B", "arrival time [UT]": arrtime_stb.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_stb, 0))})        
@@ -779,6 +787,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("------------------------------------")
         print("Arrival time at MESSENGER:", arrtime_mes.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at MESSENGER: {arrspeed_mes:.0f} km/s")
+        
+        hit = 1
 
         pred.append({"target": "MESSENGER", "arrival time [UT]": arrtime_mes.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_mes, 0))})
@@ -802,6 +812,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("Arrival time at Venus Express:", arrtime_vex.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at Venus Express: {arrspeed_vex:.0f} km/s")
         
+        hit = 1
+        
         pred.append({"target": "Venus Express", "arrival time [UT]": arrtime_vex.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_vex, 0))})
 
@@ -823,6 +835,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("------------------------------------")
         print("Arrival time at Solar Orbiter:", arrtime_solo.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at Solar Orbiter: {arrspeed_solo:.0f} km/s")
+        
+        hit = 1
         
         pred.append({"target": "Solar Orbiter", "arrival time [UT]": arrtime_solo.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_solo, 0))})
@@ -846,6 +860,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("Arrival time at Parker Solar Probe:", arrtime_psp.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at Parker Solar Probe: {arrspeed_psp:.0f} km/s")
         
+        hit = 1
+        
         pred.append({"target": "Parker Solar Probe", "arrival time [UT]": arrtime_psp.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_psp, 0))})
 
@@ -867,6 +883,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("------------------------------------")
         print("Arrival time at BepiColombo:", arrtime_bepi.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at BepiColombo: {arrspeed_bepi:.0f} km/s")
+        
+        hit = 1
         
         pred.append({"target": "BepiColombo", "arrival time [UT]": arrtime_bepi.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_bepi, 0))})
@@ -890,6 +908,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("Arrival time at Mercury:", arrtime_mercury.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at Mercury: {arrspeed_mercury:.0f} km/s")
         
+        hit = 1
+        
         pred.append({"target": "Mercury", "arrival time [UT]": arrtime_mercury.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_mercury, 0))})
 
@@ -911,6 +931,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("------------------------------------")
         print("Arrival time at Venus:", arrtime_venus.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at Venus: {arrspeed_venus:.0f} km/s")
+        
+        hit = 1
         
         pred.append({"target": "Venus", "arrival time [UT]": arrtime_venus.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_venus, 0))})
@@ -934,6 +956,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("Arrival time at L1:", arrtime_L1.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at L1: {arrspeed_L1:.0f} km/s")
         
+        hit = 1
+        
         pred.append({"target": "L1", "arrival time [UT]": arrtime_L1.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_L1, 0))})
 
@@ -955,6 +979,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         print("------------------------------------")
         print("Arrival time at Mars:", arrtime_mars.strftime("%Y-%m-%d %H:%M"))
         print(f"Arrival speed at Mars: {arrspeed_mars:.0f} km/s")
+        
+        hit = 1
         
         pred.append({"target": "Mars", "arrival time [UT]": arrtime_mars.strftime("%Y-%m-%d %H:%M"),
                      "arrival speed [km/s]": int(round(arrspeed_mars, 0))})
@@ -980,6 +1006,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             print("Arrival time at Jupiter:", arrtime_jupiter.strftime("%Y-%m-%d %H:%M"))
             print(f"Arrival speed at Jupiter: {arrspeed_jupiter:.0f} km/s")
             
+            hit = 1
+            
             pred.append({"target": "Jupiter", "arrival time [UT]": arrtime_jupiter.strftime("%Y-%m-%d %H:%M"),
                          "arrival speed [km/s]": int(round(arrspeed_jupiter, 0))})
 
@@ -1001,6 +1029,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             print("------------------------------------")
             print("Arrival time at Saturn:", arrtime_saturn.strftime("%Y-%m-%d %H:%M"))
             print(f"Arrival speed at Saturn: {arrspeed_saturn:.0f} km/s")
+            
+            hit = 1
             
             pred.append({"target": "Saturn", "arrival time [UT]": arrtime_saturn.strftime("%Y-%m-%d %H:%M"),
                          "arrival speed [km/s]": int(round(arrspeed_saturn, 0))})
@@ -1024,6 +1054,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             print("Arrival time at Uranus:", arrtime_uranus.strftime("%Y-%m-%d %H:%M"))
             print(f"Arrival speed at Uranus: {arrspeed_uranus:.0f} km/s")
             
+            hit = 1
+            
             pred.append({"target": "Uranus", "arrival time [UT]": arrtime_uranus.strftime("%Y-%m-%d %H:%M"),
                          "arrival speed [km/s]": int(round(arrspeed_uranus, 0))})
 
@@ -1046,11 +1078,17 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             print("Arrival time at Neptune:", arrtime_neptune.strftime("%Y-%m-%d %H:%M"))
             print(f"Arrival speed at Neptune: {arrspeed_neptune:.0f} km/s")
             
+            hit = 1
+            
             pred.append({"target": "Neptune", "arrival time [UT]": arrtime_neptune.strftime("%Y-%m-%d %H:%M"),
                          "arrival speed [km/s]": int(round(arrspeed_neptune, 0))})
 
     print("------------------------------------")
-
+    
+    if not hit:
+        pred.append({"target": np.nan, "arrival time [UT]": np.nan,
+                         "arrival speed [km/s]": np.nan})
+        
     # Create a figure with two subplots (panels)
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 12), facecolor='white')
 
@@ -1364,3 +1402,60 @@ def assess_prediction(prediction, target, is_time, is_speed):
             arrival_dv = np.nan
             
     return arrival_dt, arrival_dv
+
+def assess_ensemble(ensemble, det_results):
+    
+    ensemble_results = pd.DataFrame(columns=['target', 'likelihood [%]', 'arrival time (det) [UT]', 'arrival speed (det) [km/s]', 
+                                             'arrival time (mean) [UT]', 'arrival time (std dev) [h]', 'arrival speed (mean) [km/s]', 'arrival speed (std dev) [km/s]'])
+    
+    target_names = ensemble['target'].unique()
+    
+    number_of_runs = ensemble['run no.'].max()
+    
+    j = 0
+    
+    for i in range(0, len(target_names)):
+        if target_names[i] == 'No hit!':
+            print('target_names (c): ', target_names[i])
+            continue
+        
+        j = j + 1
+        
+        print('target_names: ', target_names[i])
+        
+        ensemble['arrival time [UT]'] = pd.to_datetime(ensemble['arrival time [UT]'])
+        
+        mean_arrival_time = ensemble[ensemble['target'] == target_names[i]]['arrival time [UT]'].mean()
+        mean_arrival_time = mean_arrival_time.strftime("%Y-%m-%d %H:%M")
+        
+        arrival_times_hours = ensemble[ensemble['target'] == target_names[i]]['arrival time [UT]'].dt.hour
+        std_dev_hours = round(np.std(arrival_times_hours), 2)
+        
+        mean_arrival_speed = ensemble[ensemble['target'] == target_names[i]]['arrival speed [km/s]'].mean()
+        std_dev_speed = round(np.std(ensemble[ensemble['target'] == target_names[i]]['arrival speed [km/s]']))
+        
+        #Likelihood of hit at a certain target
+        count = (ensemble['target'] == target_names[i]).sum()
+        
+        tmp_ensemble_results = pd.DataFrame(columns=['target'])
+        tmp_ensemble_results.loc[j, 'target'] = target_names[i]
+        tmp_ensemble_results['likelihood [%]'] = round(count/(number_of_runs * 0.01))
+        
+        if (det_results['target'] == target_names[i]).any():
+            tmp_ensemble_results['arrival time (det) [UT]'] = det_results['arrival time [UT]'][0]
+            tmp_ensemble_results['arrival speed (det) [km/s]'] = det_results['arrival speed [km/s]'][0]
+        else:
+            tmp_ensemble_results['arrival time (det) [UT]'] = 'No hit!'
+            tmp_ensemble_results['arrival speed (det) [km/s]'] = np.nan
+                        
+        tmp_ensemble_results['arrival time (mean) [UT]'] = mean_arrival_time
+        tmp_ensemble_results['arrival time (std dev) [h]'] = std_dev_hours
+        tmp_ensemble_results['arrival speed (mean) [km/s]'] = round(mean_arrival_speed)
+        tmp_ensemble_results['arrival speed (std dev) [km/s]'] = std_dev_speed
+                       
+        ensemble_results = pd.concat([ensemble_results, tmp_ensemble_results])
+        
+    
+    pdb.set_trace()
+    
+    return ensemble_results
