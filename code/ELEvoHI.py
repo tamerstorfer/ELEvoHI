@@ -21,12 +21,16 @@ import csv
 import logging
 import shutil
 import pdb
+import time as ti
 
 from functions import load_config, calculate_new_time_axis, merge_tracks, fpf_function, fpf, ELCon, fitdbm, fitdbmneg, cost_function, cost_functionneg, DBMfitting, elevo_analytic, elevo, assess_prediction, assess_ensemble
 
 def main():
     #global tinit, rinit, vinit, swspeed, xdata, ydata, direction, prediction_path
     global prediction_path
+    
+    # Record the start time of ELEvoHI
+    s_ti = ti.time()
 
     # Constants
     AU = const.au.to_value('km')
@@ -40,9 +44,9 @@ def main():
     HIobs = config['HIobs']
     mode = config['mode']
     phi_FPF = config['phi_FPF']
-    phi_manual = config['phi_manual']
-    f = config['f']
-    halfwidth = np.deg2rad(config['halfwidth'])
+    phi_manual = config['phi_manual'][0]
+    f = config['f'][0]
+    halfwidth = np.deg2rad(config['halfwidth'][0])
     startcut = config['startcut']
     endcut = config['endcut']
     outer_system = config['outer_system']
@@ -50,38 +54,44 @@ def main():
     silent = config['silent']
     do_ensemble = config['do_ensemble']
     
-    if phi_FPF:
-        fpf_fit = fpf(track, startcut, endcut, prediction_path)
-        phi = np.deg2rad(fpf_fit['phi_FPF'])
-    else:
-        phi = np.deg2rad(phi_manual)
-        
-    det_run = [phi, f, halfwidth]
+    year = eventdate[:4]
+    event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
+    #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
+    prediction_path = pred_path + eventdate + '_' + HIobs + '/'
+    
+    # combines the time-elongation tracks into one average track on a equitemporal time-axis
+    # includes standard deviation and saves a figure to the predictions folder
+    track = merge_tracks(event_path, prediction_path)
     
     # ELEvoHI ensemble
     # Define the range of values for each parameter to build the ensemble
     
-    hw_range = [5, 20]
-    hw_step = np.deg2rad(5)
-    p_range = [10, 10]
-    p_step = np.deg2rad(5)
-    f_range = [0.8, 1]
-    f_step = 0.1
+    hw_range = [config['halfwidth'][1], config['halfwidth'][2]]
+    hw_step = np.deg2rad(config['halfwidth_step'])
+    #p_range = [config['phi_manual'][1], config['phi_manual'][2]]
+    p_step = np.deg2rad(config['phi_step'])
+    f_range = [config['f'][1], config['f'][2]]
+    f_step = config['f_step']
     
-    if halfwidth > np.deg2rad(hw_range[0]):
-        start_lambda = halfwidth - np.deg2rad(hw_range[0])
+    if phi_FPF:
+        fpf_fit = fpf(track, startcut, endcut, prediction_path)
+        phi = np.deg2rad(fpf_fit['phi_FPF'])
+        start_phi = np.deg2rad(fpf_fit['phi_FPF'] - config['phi_FPF_range'][0])
+        end_phi = np.deg2rad(fpf_fit['phi_FPF'] + config['phi_FPF_range'][1])
+        num_points_phi = int(round((np.rad2deg(end_phi) - np.rad2deg(start_phi))/np.rad2deg(p_step) + 1))
     else:
-        start_lambda = np.deg2rad(1)
-    end_lambda = halfwidth + np.deg2rad(hw_range[1])
-    num_points_lambda = int((np.rad2deg(end_lambda) - np.rad2deg(start_lambda))/np.rad2deg(hw_step) + 1)
+        phi = np.deg2rad(phi_manual)
+        start_phi = np.deg2rad(config['phi_manual'][1])    
+        end_phi = np.deg2rad(config['phi_manual'][2])
+        num_points_phi = int(round((config['phi_manual'][2] - config['phi_manual'][1])/np.rad2deg(p_step) + 1))
         
-    if phi > np.deg2rad(p_range[0]):
-        start_phi = phi - np.deg2rad(p_range[0])
-    else:
-        phi = np.deg2rad(1)
-        
-    end_phi = phi + np.deg2rad(p_range[1])
-    num_points_phi = int((np.rad2deg(end_phi) - np.rad2deg(start_phi))/np.rad2deg(p_step) + 1)
+    det_run = [phi, f, halfwidth]
+    
+    #pdb.set_trace()
+    
+    start_lambda = np.deg2rad(hw_range[0])
+    end_lambda = np.deg2rad(hw_range[1])
+    num_points_lambda = int((hw_range[1] - hw_range[0])/np.rad2deg(hw_step) + 1)
     
     start_f = f_range[0]
     end_f = f_range[1]
@@ -90,6 +100,8 @@ def main():
     lambda_range = np.linspace(start_lambda, end_lambda, num_points_lambda)
     phi_range = np.linspace(start_phi, end_phi, num_points_phi)
     aspect_range = np.linspace(start_f, end_f, num_points_f)
+    
+    #pdb.set_trace()
     
     # Create a grid of parameter combinations
     lambda_grid, phi_grid, f_grid = np.meshgrid(lambda_range, phi_range, aspect_range, indexing='ij')
@@ -183,14 +195,7 @@ def main():
             NEPTUNE_istime = datetime.strptime(NEPTUNE_istime, "%Y-%m-%d %H:%M")
         NEPTUNE_isspeed = config.get('NEPTUNE_isv_obs', np.nan)
     
-    year = eventdate[:4]
-    event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
-    #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
-    prediction_path = pred_path + eventdate + '_' + HIobs + '/'
-    
-    # combines the time-elongation tracks into one average track on a equitemporal time-axis
-    # includes standard deviation and saves a figure to the predictions folder
-    track = merge_tracks(event_path, prediction_path)
+    # read in track cut out from here
     
     shutil.copy(basic_path + 'ELEvoHI/code/config.json', prediction_path)
         
@@ -216,8 +221,8 @@ def main():
         
         if do_ensemble:
             print('Parameters for this ensemble member:')
-            print('phi: ', np.rad2deg(phi))
-            print('halfwidth: ', np.rad2deg(halfwidth))
+            print('phi: ', round(np.rad2deg(phi)))
+            print('halfwidth: ', round(np.rad2deg(halfwidth)))
             print('inverse ellipse aspect ratio: ', f)
             runnumber = runnumber + 1
         
@@ -917,119 +922,120 @@ def main():
         target_neptune_present = prediction['target'] == 'Neptune'
 
         if target_l1_present.any():
-            dt_L1, dv_L1 = assess_prediction(prediction, 'L1', L1_istime, L1_isspeed)
+            dt_L1, dv_L1, prediction = assess_prediction(prediction, 'L1', L1_istime, L1_isspeed)
 
         if target_stereoa_present.any():
-            dt_stereoa, dv_stereoa = assess_prediction(prediction, 'STEREO-A', STEREOA_istime, STEREOA_isspeed)
+            dt_stereoa, dv_stereoa, prediction = assess_prediction(prediction, 'STEREO-A', STEREOA_istime, STEREOA_isspeed)
 
         if target_stereob_present.any():
-            dt_stereob, dv_stereob = assess_prediction(prediction, 'STEREO-B', STEREOB_istime, STEREOB_isspeed)
+            dt_stereob, dv_stereob, prediction = assess_prediction(prediction, 'STEREO-B', STEREOB_istime, STEREOB_isspeed)
             
         if target_solo_present.any():
-            dt_solo, dv_solo = assess_prediction(prediction, 'Solar Orbiter', SOLO_istime, SOLO_isspeed)
+            dt_solo, dv_solo, prediction = assess_prediction(prediction, 'Solar Orbiter', SOLO_istime, SOLO_isspeed)
             
         if target_bepi_present.any():
-            dt_bepi, dv_bepi = assess_prediction(prediction, 'BepiColombo', BEPI_istime, BEPI_isspeed)
+            dt_bepi, dv_bepi, prediction = assess_prediction(prediction, 'BepiColombo', BEPI_istime, BEPI_isspeed)
             
         if target_psp_present.any():
-            dt_psp, dv_psp = assess_prediction(prediction, 'Parker Solar Probe', PSP_istime, PSP_isspeed)
+            dt_psp, dv_psp, prediction = assess_prediction(prediction, 'Parker Solar Probe', PSP_istime, PSP_isspeed)
             
         if target_mes_present.any():
-            dt_mes, dv_mes = assess_prediction(prediction, 'MESSENGER', MES_istime, MES_isspeed)
+            dt_mes, dv_mes, prediction = assess_prediction(prediction, 'MESSENGER', MES_istime, MES_isspeed)
 
         if target_vex_present.any():
-            dt_vex, dv_vex = assess_prediction(prediction, 'Venus Express', VEX_istime, VEX_isspeed)
+            dt_vex, dv_vex, prediction = assess_prediction(prediction, 'Venus Express', VEX_istime, VEX_isspeed)
             
         if target_mercury_present.any():
-            dt_mercury, dv_mercury = assess_prediction(prediction, 'Mercury', MERCURY_istime, MERCURY_isspeed)
+            dt_mercury, dv_mercury, prediction = assess_prediction(prediction, 'Mercury', MERCURY_istime, MERCURY_isspeed)
             
         if target_venus_present.any():
-            dt_venus, dv_venus = assess_prediction(prediction, 'Venus', VENUS_istime, VENUS_isspeed)
+            dt_venus, dv_venus, prediction = assess_prediction(prediction, 'Venus', VENUS_istime, VENUS_isspeed)
             
         if target_earth_present.any():
-            dt_earth, dv_earth = assess_prediction(prediction, 'Earth', EARTH_istime, EARTH_isspeed)
+            dt_earth, dv_earth, prediction = assess_prediction(prediction, 'Earth', EARTH_istime, EARTH_isspeed)
 
         if target_mars_present.any():
-            dt_mars, dv_mars = assess_prediction(prediction, 'Mars', MARS_istime, MARS_isspeed)
+            dt_mars, dv_mars, prediction = assess_prediction(prediction, 'Mars', MARS_istime, MARS_isspeed)
             
         if target_jupiter_present.any():
-            dt_jupiter, dv_jupiter = assess_prediction(prediction, 'Jupiter', JUPITER_istime, JUPITER_isspeed)
+            dt_jupiter, dv_jupiter, prediction = assess_prediction(prediction, 'Jupiter', JUPITER_istime, JUPITER_isspeed)
             
         if target_saturn_present.any():
-            dt_saturn, dv_saturn = assess_prediction(prediction, 'Saturn', SATURN_istime, SATURN_isspeed)
+            dt_saturn, dv_saturn, prediction = assess_prediction(prediction, 'Saturn', SATURN_istime, SATURN_isspeed)
             
         if target_uranus_present.any():
-            dt_uranus, dv_uranus = assess_prediction(prediction, 'Uranus', URANUS_istime, URANUS_isspeed)
+            dt_uranus, dv_uranus, prediction = assess_prediction(prediction, 'Uranus', URANUS_istime, URANUS_isspeed)
 
         if target_neptune_present.any():
-            dt_neptune, dv_neptune = assess_prediction(prediction, 'Neptune', NEPTUNE_istime, NEPTUNE_isspeed)
-            
-        #pdb.set_trace()
+            dt_neptune, dv_neptune, prediction = assess_prediction(prediction, 'Neptune', NEPTUNE_istime, NEPTUNE_isspeed)
         
-        if runnumber == 1:
-            ensemble['run no.'] = [int(runnumber)] * len(prediction)
-            ensemble['target'] = prediction['target']
-            ensemble['apex direction (HEE)'] = round(np.rad2deg(delta_earth))
-            ensemble['phi [° from HI observer]'] = round(np.rad2deg(phi))
-            ensemble['halfwidth [°]'] = round(np.rad2deg(halfwidth))
-            ensemble['inv. aspect ratio'] = f
-            ensemble['startcut'] = startcut
-            ensemble['endcut'] = endcut
-            ensemble['elongation min. [°]'] = round(elon[startcut], 1)
-            ensemble['elongation max. [°]'] = round(elon[endcut-1], 1)
-            ensemble['tinit [UT]'] = tinit.strftime("%Y-%m-%d %H:%M")
-            ensemble['rinit [R_sun]'] = round(rinit/rsun)
-            ensemble['vinit [km/s]'] = round(vinit)
-            ensemble['drag parameter [e-7/km]'] = round(gamma, 2)
-            ensemble['solar wind speed [km/s]'] = round(winds)
-            ensemble['dec (+)/acc (-)'] = accsign
-            ensemble['arrival time [UT]'] = prediction['arrival time [UT]']
-            ensemble['arrival speed [km/s]'] = prediction['arrival speed [km/s]']
 
-        else:
-            tmp_ensemble = pd.DataFrame()
-            tmp_ensemble['run no.'] = [int(runnumber)] * len(prediction)
-            tmp_ensemble['target'] = prediction['target']
-            tmp_ensemble['apex direction (HEE)'] = round(np.rad2deg(delta_earth))
-            tmp_ensemble['phi [° from HI observer]'] = round(np.rad2deg(phi))
-            tmp_ensemble['halfwidth [°]'] = round(np.rad2deg(halfwidth))
-            tmp_ensemble['inv. aspect ratio'] = f
-            tmp_ensemble['startcut'] = startcut
-            tmp_ensemble['endcut'] = endcut
-            tmp_ensemble['elongation min. [°]'] = round(elon[startcut], 1)
-            tmp_ensemble['elongation max. [°]'] = round(elon[endcut-1], 1)
-            tmp_ensemble['tinit [UT]'] = tinit.strftime("%Y-%m-%d %H:%M")
-            tmp_ensemble['rinit [R_sun]'] = round(rinit/rsun)
-            tmp_ensemble['vinit [km/s]'] = round(vinit)
-            tmp_ensemble['drag parameter [e-7/km]'] = round(gamma, 2)
-            tmp_ensemble['solar wind speed [km/s]'] = round(winds)
-            tmp_ensemble['dec (+)/acc (-)'] = accsign
-            tmp_ensemble['arrival time [UT]'] = prediction['arrival time [UT]']
-            tmp_ensemble['arrival speed [km/s]'] = prediction['arrival speed [km/s]']
+        #else:
+        tmp_ensemble = pd.DataFrame()
+        tmp_ensemble['run no.'] = [int(runnumber)] * len(prediction)
+        tmp_ensemble['target'] = prediction['target']
+        tmp_ensemble['apex direction (HEE)'] = round(np.rad2deg(delta_earth))
+        tmp_ensemble['phi [° from HI observer]'] = round(np.rad2deg(phi))
+        tmp_ensemble['halfwidth [°]'] = round(np.rad2deg(halfwidth))
+        tmp_ensemble['inv. aspect ratio'] = f
+        tmp_ensemble['startcut'] = startcut
+        tmp_ensemble['endcut'] = endcut
+        tmp_ensemble['elongation min. [°]'] = round(elon[startcut], 1)
+        tmp_ensemble['elongation max. [°]'] = round(elon[endcut-1], 1)
+        tmp_ensemble['tinit [UT]'] = tinit.strftime("%Y-%m-%d %H:%M")
+        tmp_ensemble['rinit [R_sun]'] = round(rinit/rsun)
+        tmp_ensemble['vinit [km/s]'] = round(vinit)
+        tmp_ensemble['drag parameter [e-7/km]'] = round(gamma, 2)
+        tmp_ensemble['solar wind speed [km/s]'] = round(winds)
+        tmp_ensemble['dec (+)/acc (-)'] = accsign
+        tmp_ensemble['arrival time [UT]'] = prediction['arrival time [UT]']
+        tmp_ensemble['arrival speed [km/s]'] = prediction['arrival speed [km/s]']
+        tmp_ensemble['dt [h]'] = prediction['dt [h]']
+        tmp_ensemble['dv [km/s]'] = prediction['dv [km/s]']
             
-            ensemble = pd.concat([ensemble, tmp_ensemble])
-            
-            #pdb.set_trace()
-        #nan_indices = ensemble['target'].isna()
+        ensemble = pd.concat([ensemble, tmp_ensemble])
+
         ensemble.loc[ensemble['target'].isna(), 'target'] = 'No hit!'
         
         if round(np.rad2deg(det_run[0])) == round(np.rad2deg(phi)):
-            print('works 1')
             if det_run[1] == f:
-                print('works 2')
                 if round(np.rad2deg(det_run[2])) == round(np.rad2deg(halfwidth)):
-                    print('works 3')
                     det_results = prediction
-       
+                    #pdb.set_trace()
         pass
-    
-    #pdb.set_trace()
+        
+        
         
     if do_ensemble:
         ensemble.to_csv(prediction_path + 'ensemble.csv', na_rep='NaN')
         ensemble_results = assess_ensemble(ensemble, det_results)
         ensemble_results.to_csv(prediction_path + 'ensemble_results.csv', na_rep='NaN')
-    
+        
+        #pdb.set_trace()
+        
+        target_names = ensemble_results['target'].unique()
+        
+        print('------ELEvoHI ensemble modelling------')
+        print('Targets:')
+        
+        for i in range(0, len(target_names)):
+            if target_names[i] == 'No hit!':
+                #print('target_names (c): ', target_names[i])
+                continue
+            
+            print('       ========')
+            print('       ', ensemble_results['target'].iloc[i])
+            print('       --------')
+            print('        Arrival Probability: ', ensemble_results['likelihood [%]'].iloc[i], '%')
+            print('        Mean Arrival Time [UT]: ', ensemble_results['arrival time (mean) [UT]'].iloc[i], '+/-', ensemble_results['arrival time (std dev) [h]'].iloc[i], ' hours')
+            print('        Mean Arrival Speed [km/s]: ', ensemble_results['arrival speed (mean) [km/s]'].iloc[i], '+/-', ensemble_results['arrival speed (std dev) [km/s]'].iloc[i], 'km/s')
+            
+    # Record the end time of ELEvoHI
+    e_ti = ti.time()
+    # Duration of model run
+    elapsed_time = round((e_ti - s_ti)/60., 2)
+    print("ELEvoHI needed", elapsed_time, "minutes.")
+    print(np.rad2deg(det_run[0]), det_run[1], np.rad2deg(det_run[2]))
         
 if __name__ == '__main__':
     main()
