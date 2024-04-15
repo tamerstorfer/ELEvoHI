@@ -244,11 +244,13 @@ def fpf(track, startcut, endcut, prediction_path):
     underlined_effect = [path_effects.SimpleLineShadow(),
                         path_effects.Normal()]
     text_loc = round(len(time)*0.7)
+    
+    step = (round(max(ydata) - min(ydata)))/10
 
     # Coordinates for placing the text annotations
     results_x, results_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata))
-    speed_x, speed_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - 0.5
-    phi_x, phi_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - 1
+    speed_x, speed_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - step
+    phi_x, phi_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - 2*step
 
     # Text annotations to the plot
     ax.text(results_x, results_y, results_text, fontsize=16, path_effects=underlined_effect)
