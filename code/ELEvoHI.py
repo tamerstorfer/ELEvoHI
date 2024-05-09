@@ -1,6 +1,7 @@
 
 import numpy as np
 import os
+from pathlib import Path
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.optimize import minimize
@@ -61,6 +62,14 @@ def main():
     event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
+    
+    # logging runnumbers for which no DBMfit converges
+    nofit = []
+    
+    # variable is set to 1 in case no fit is possible for deterministic run
+    no_det_run = False
+    
+    #pdb.set_trace()
     
     # combines the time-elongation tracks into one average track on a equitemporal time-axis
     # includes standard deviation and saves a figure to the predictions folder
@@ -228,6 +237,299 @@ def main():
         lambda_values = np.linspace(0, 10, 11)
         phi_values = np.linspace(0, 10, 11)
         f_values = np.linspace(0, 10, 11)
+        
+    #####################################################################
+    # get s/c and planet positions
+
+    #STEREO Ahead
+    start_date = datetime(2006, 10, 26, 0, 2)
+    
+    logging.getLogger('sunpy.coordinates').setLevel(logging.WARNING)
+
+    if start_date < thi:
+        coord = get_horizons_coord('STEREO-A', thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+        sta_time = sc_hee.obstime.to_datetime()
+        sta_r = sc_heeq.radius.value
+        sta_lon = np.deg2rad(sc_hee.lon.value)
+        sta_lat = np.deg2rad(sc_hee.lat.value)
+        sta_available = 1    
+    else: sta_available = 0
+
+    # Parker Solar Probe
+    start_date = datetime(2018, 8, 12, 9, 0)
+
+    if start_date < thi:
+        coord = get_horizons_coord('Parker Solar Probe', thi)  
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        psp_time = sc_hee.obstime.to_datetime()
+        psp_r = sc_heeq.radius.value
+        psp_lon = np.deg2rad(sc_hee.lon.value)
+        psp_lat = np.deg2rad(sc_hee.lat.value)
+        psp_available = 1
+    else: psp_available = 0
+        
+    # Solar Orbiter    
+    start_date = datetime(2020, 2, 10, 5, 0)
+
+    if start_date < thi:
+        coord = get_horizons_coord('Solar Orbiter', thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        solo_time = sc_hee.obstime.to_datetime()
+        solo_r = sc_heeq.radius.value
+        solo_lon = np.deg2rad(sc_hee.lon.value)
+        solo_lat = np.deg2rad(sc_hee.lat.value)
+        solo_available = 1
+    else: solo_available = 0
+
+    # BepiColombo
+    start_date = datetime(2018, 10, 20, 3, 0)
+
+    if start_date < thi:
+
+        coord = get_horizons_coord('BepiColombo', thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        bepi_time = sc_hee.obstime.to_datetime()
+        bepi_r = sc_heeq.radius.value
+        bepi_lon = np.deg2rad(sc_hee.lon.value)
+        bepi_lat = np.deg2rad(sc_hee.lat.value)
+        bepi_available = 1
+    else: bepi_available = 0
+        
+    # STEREO Behind
+    start_date = datetime(2006, 10, 26, 2, 0)
+    end_date = datetime(2014, 9, 30, 23, 0)
+
+    if start_date < thi < end_date:
+        coord = get_horizons_coord('STEREO-B', thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        stb_time = sc_hee.obstime.to_datetime()
+        stb_r = sc_heeq.radius.value
+        stb_lon = np.deg2rad(sc_hee.lon.value)
+        stb_lat = np.deg2rad(sc_hee.lat.value)
+        stb_available = 1
+    else: stb_available = 0
+        
+    # Venus Express
+    start_date = datetime(2005, 11, 9, 6, 0)
+    end_date = datetime(2014, 12, 31, 23, 0)
+
+    if start_date < thi < end_date:
+        coord = get_horizons_coord('Venus Express', thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        vex_time = sc_hee.obstime.to_datetime()
+        vex_r = sc_heeq.radius.value
+        vex_lon = np.deg2rad(sc_hee.lon.value)
+        vex_lat = np.deg2rad(sc_hee.lat.value)
+        vex_available = 1
+    else: vex_available = 0
+        
+    # Messenger
+    start_date = datetime(2004, 8, 3, 8, 0)
+    end_date = datetime(2015, 5, 1, 18, 0)
+
+    if start_date < thi < end_date:
+        coord = get_horizons_coord('Messenger', thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+        mes_time = sc_hee.obstime.to_datetime()
+        mes_r = sc_heeq.radius.value
+        mes_lon = np.deg2rad(sc_hee.lon.value)
+        mes_lat = np.deg2rad(sc_hee.lat.value)
+        mes_available = 1
+    else: mes_available = 0
+
+    # Mercury
+    coord = get_horizons_coord(199, thi)
+    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+    mercury_time = sc_hee.obstime.to_datetime()
+    mercury_r = sc_heeq.radius.value
+    mercury_lon = np.deg2rad(sc_hee.lon.value)
+    mercury_lat = np.deg2rad(sc_hee.lat.value)
+
+    # Venus
+    coord = get_horizons_coord(299, thi)
+    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+    venus_time = sc_hee.obstime.to_datetime()
+    venus_r = sc_heeq.radius.value
+    venus_lon = np.deg2rad(sc_hee.lon.value)
+    venus_lat = np.deg2rad(sc_hee.lat.value)
+
+    # L1
+    coord = get_horizons_coord('EM-L1', thi)
+    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+    L1_time = sc_hee.obstime.to_datetime()
+    L1_r = sc_heeq.radius.value
+    L1_lon = np.deg2rad(sc_hee.lon.value)
+    L1_lat = np.deg2rad(sc_hee.lat.value)
+
+    # Earth
+    coord = get_horizons_coord(399, thi)
+    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+    earth_time = sc_hee.obstime.to_datetime()
+    earth_r = sc_heeq.radius.value
+    earth_lon = np.deg2rad(sc_hee.lon.value)
+    earth_lat = np.deg2rad(sc_hee.lat.value)
+
+    # Mars
+    coord = get_horizons_coord(499, thi)
+    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+        
+    mars_time = sc_hee.obstime.to_datetime()
+    mars_r = sc_heeq.radius.value
+    mars_lon = np.deg2rad(sc_hee.lon.value)
+    mars_lat = np.deg2rad(sc_hee.lat.value)
+
+    if outer_system == 1:
+        # Jupiter
+        coord = get_horizons_coord(599, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+        jupiter_time = sc_hee.obstime.to_datetime()
+        jupiter_r = sc_heeq.radius.value
+        jupiter_lon = np.deg2rad(sc_hee.lon.value)
+        jupiter_lat = np.deg2rad(sc_hee.lat.value)
+
+        # Saturn
+        coord = get_horizons_coord(699, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+        saturn_time = sc_hee.obstime.to_datetime()
+        saturn_r = sc_heeq.radius.value
+        saturn_lon = np.deg2rad(sc_hee.lon.value)
+        saturn_lat = np.deg2rad(sc_hee.lat.value)
+
+        # Uranus
+        coord = get_horizons_coord(799, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+        uranus_time = sc_hee.obstime.to_datetime()
+        uranus_r = sc_heeq.radius.value
+        uranus_lon = np.deg2rad(sc_hee.lon.value)
+        uranus_lat = np.deg2rad(sc_hee.lat.value)
+
+        # Neptune
+        coord = get_horizons_coord(899, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+        neptune_time = sc_hee.obstime.to_datetime()
+        neptune_r = sc_heeq.radius.value
+        neptune_lon = np.deg2rad(sc_hee.lon.value)
+        neptune_lat = np.deg2rad(sc_hee.lat.value)
+        
+    availability = {
+        'sta_available': sta_available,
+        'stb_available': stb_available,
+        'mes_available': mes_available,
+        'vex_available': vex_available,
+        'solo_available': solo_available,
+        'psp_available': psp_available,
+        'bepi_available': bepi_available
+    }
+    
+    positions = {
+        'L1_lon': L1_lon,
+        'mercury_lon': mercury_lon,
+        'venus_lon': venus_lon,
+        'earth_lon': earth_lon,
+        'mars_lon': mars_lon,
+        'L1_r': L1_r,
+        'mercury_r': mercury_r,
+        'venus_r': venus_r,
+        'earth_r': earth_r,
+        'mars_r': mars_r,
+
+    }
+    
+    if stb_available:
+        # New entry as a dictionary
+        add_stb = {'stb_lon': stb_lon,
+            'stb_r': stb_r
+        }
+        # Adding the new entry using update()
+        positions.update(add_stb)
+    if sta_available:
+        # New entry as a dictionary
+        add_sta = {'sta_lon': sta_lon,
+            'sta_r': sta_r
+        }
+        # Adding the new entry using update()
+        positions.update(add_sta)
+    if mes_available:
+        # New entry as a dictionary
+        add_mes = {'mes_lon': mes_lon,
+            'mes_r': mes_r
+        }
+        # Adding the new entry using update()
+        positions.update(add_mes)
+    if vex_available:
+        # New entry as a dictionary
+        add_vex = {'vex_lon': vex_lon,
+            'vex_r': vex_r
+        }
+        # Adding the new entry using update()
+        positions.update(add_vex) 
+    if solo_available:
+        # New entry as a dictionary
+        add_solo = {'solo_lon': solo_lon,
+            'solo_r': solo_r
+        }
+        # Adding the new entry using update()
+        positions.update(add_solo)
+    if psp_available:
+        # New entry as a dictionary
+        add_psp = {'psp_lon': psp_lon,
+            'psp_r': psp_r
+        }
+        # Adding the new entry using update()
+        positions.update(add_psp)  
+    if bepi_available:
+        # New entry as a dictionary
+        add_bepi = {'bepi_lon': bepi_lon,
+            'bepi_r': bepi_r
+        }
+        # Adding the new entry using update()
+        positions.update(add_bepi)
+    if outer_system:
+        outer_planets = {'jupiter_r': jupiter_r,
+                        'saturn_r': saturn_r,
+                        'uranus_r': uranus_r,
+                        'neptune_r': neptune_r,
+                        'jupiter_lon': jupiter_lon,
+                        'saturn_lon': saturn_lon,
+                        'uranus_lon': uranus_lon,
+                        'neptune_lon': neptune_lon
+        }
+        positions.update(outer_planets)
+                
+        ############################################################################   
+        # calculate angular separation of CME apex from each target
 
     # Ensemble calculation starts here
   
@@ -239,6 +541,7 @@ def main():
             print('halfwidth: ', round(np.rad2deg(halfwidth)))
             print('inverse ellipse aspect ratio: ', round(f, 1))
             runnumber = runnumber + 1
+            print('runnumber: ', runnumber)
         else:
             print('ELEvoHI is in single mode.')
             phi = det_run[0]
@@ -250,303 +553,21 @@ def main():
         # get s/c and planet positions
 
         #STEREO Ahead
-        start_date = datetime(2006, 10, 26, 0, 2)
-        
-        logging.getLogger('sunpy.coordinates').setLevel(logging.WARNING)
+        if sta_available and HIobs == 'A':
+            d = sta_r
+            if sta_lon >=0:
+                direction = sta_lon - phi
+            else:
+                direction = sta_lon + phi       
 
-        if start_date < thi:
-            coord = get_horizons_coord('STEREO-A', thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-            sta_time = sc_hee.obstime.to_datetime()
-            sta_r = sc_heeq.radius.value
-            sta_lon = np.deg2rad(sc_hee.lon.value)
-            sta_lat = np.deg2rad(sc_hee.lat.value)
-            sta_available = 1
-            if HIobs == 'A':
-                d = sta_r
-                if sta_lon >=0:
-                    direction = sta_lon - phi
-                else:
-                    direction = sta_lon + phi       
-        else: sta_available = 0
-
-        # Parker Solar Probe
-        start_date = datetime(2018, 8, 12, 9, 0)
-
-        if start_date < thi:
-            coord = get_horizons_coord('Parker Solar Probe', thi)  
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-            psp_time = sc_hee.obstime.to_datetime()
-            psp_r = sc_heeq.radius.value
-            psp_lon = np.deg2rad(sc_hee.lon.value)
-            psp_lat = np.deg2rad(sc_hee.lat.value)
-            psp_available = 1
-        else: psp_available = 0
-            
-        # Solar Orbiter    
-        start_date = datetime(2020, 2, 10, 5, 0)
-
-        if start_date < thi:
-            coord = get_horizons_coord('Solar Orbiter', thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-            solo_time = sc_hee.obstime.to_datetime()
-            solo_r = sc_heeq.radius.value
-            solo_lon = np.deg2rad(sc_hee.lon.value)
-            solo_lat = np.deg2rad(sc_hee.lat.value)
-            solo_available = 1
-        else: solo_available = 0
-
-        # BepiColombo
-        start_date = datetime(2018, 10, 20, 3, 0)
-
-        if start_date < thi:
-
-            coord = get_horizons_coord('BepiColombo', thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-            bepi_time = sc_hee.obstime.to_datetime()
-            bepi_r = sc_heeq.radius.value
-            bepi_lon = np.deg2rad(sc_hee.lon.value)
-            bepi_lat = np.deg2rad(sc_hee.lat.value)
-            bepi_available = 1
-        else: bepi_available = 0
             
         # STEREO Behind
-        start_date = datetime(2006, 10, 26, 2, 0)
-        end_date = datetime(2014, 9, 30, 23, 0)
-
-        if start_date < thi < end_date:
-            coord = get_horizons_coord('STEREO-B', thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-            stb_time = sc_hee.obstime.to_datetime()
-            stb_r = sc_heeq.radius.value
-            stb_lon = np.deg2rad(sc_hee.lon.value)
-            stb_lat = np.deg2rad(sc_hee.lat.value)
-            stb_available = 1
-            if HIobs == 'B':
-                d = stb_r
-                if stb_lon >=0:
-                    direction = stb_lon - phi
-                else:
-                    direction = stb_lon + phi
-        else: stb_available = 0
-            
-        # Venus Express
-        start_date = datetime(2005, 11, 9, 6, 0)
-        end_date = datetime(2014, 12, 31, 23, 0)
-
-        if start_date < thi < end_date:
-            coord = get_horizons_coord('Venus Express', thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-            vex_time = sc_hee.obstime.to_datetime()
-            vex_r = sc_heeq.radius.value
-            vex_lon = np.deg2rad(sc_hee.lon.value)
-            vex_lat = np.deg2rad(sc_hee.lat.value)
-            vex_available = 1
-        else: vex_available = 0
-            
-        # Messenger
-        start_date = datetime(2004, 8, 3, 8, 0)
-        end_date = datetime(2015, 5, 1, 18, 0)
-
-        if start_date < thi < end_date:
-            coord = get_horizons_coord('Messenger', thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-            mes_time = sc_hee.obstime.to_datetime()
-            mes_r = sc_heeq.radius.value
-            mes_lon = np.deg2rad(sc_hee.lon.value)
-            mes_lat = np.deg2rad(sc_hee.lat.value)
-            mes_available = 1
-        else: mes_available = 0
-
-        # Mercury
-        coord = get_horizons_coord(199, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-        mercury_time = sc_hee.obstime.to_datetime()
-        mercury_r = sc_heeq.radius.value
-        mercury_lon = np.deg2rad(sc_hee.lon.value)
-        mercury_lat = np.deg2rad(sc_hee.lat.value)
-
-        # Venus
-        coord = get_horizons_coord(299, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-        venus_time = sc_hee.obstime.to_datetime()
-        venus_r = sc_heeq.radius.value
-        venus_lon = np.deg2rad(sc_hee.lon.value)
-        venus_lat = np.deg2rad(sc_hee.lat.value)
-
-        # L1
-        coord = get_horizons_coord('EM-L1', thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-        L1_time = sc_hee.obstime.to_datetime()
-        L1_r = sc_heeq.radius.value
-        L1_lon = np.deg2rad(sc_hee.lon.value)
-        L1_lat = np.deg2rad(sc_hee.lat.value)
-
-        # Earth
-        coord = get_horizons_coord(399, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-        earth_time = sc_hee.obstime.to_datetime()
-        earth_r = sc_heeq.radius.value
-        earth_lon = np.deg2rad(sc_hee.lon.value)
-        earth_lat = np.deg2rad(sc_hee.lat.value)
-
-        # Mars
-        coord = get_horizons_coord(499, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-            
-        mars_time = sc_hee.obstime.to_datetime()
-        mars_r = sc_heeq.radius.value
-        mars_lon = np.deg2rad(sc_hee.lon.value)
-        mars_lat = np.deg2rad(sc_hee.lat.value)
-
-        if outer_system == 1:
-            # Jupiter
-            coord = get_horizons_coord(599, thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-            jupiter_time = sc_hee.obstime.to_datetime()
-            jupiter_r = sc_heeq.radius.value
-            jupiter_lon = np.deg2rad(sc_hee.lon.value)
-            jupiter_lat = np.deg2rad(sc_hee.lat.value)
-
-            # Saturn
-            coord = get_horizons_coord(699, thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-            saturn_time = sc_hee.obstime.to_datetime()
-            saturn_r = sc_heeq.radius.value
-            saturn_lon = np.deg2rad(sc_hee.lon.value)
-            saturn_lat = np.deg2rad(sc_hee.lat.value)
-
-            # Uranus
-            coord = get_horizons_coord(799, thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-            uranus_time = sc_hee.obstime.to_datetime()
-            uranus_r = sc_heeq.radius.value
-            uranus_lon = np.deg2rad(sc_hee.lon.value)
-            uranus_lat = np.deg2rad(sc_hee.lat.value)
-
-            # Neptune
-            coord = get_horizons_coord(899, thi)
-            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-            neptune_time = sc_hee.obstime.to_datetime()
-            neptune_r = sc_heeq.radius.value
-            neptune_lon = np.deg2rad(sc_hee.lon.value)
-            neptune_lat = np.deg2rad(sc_hee.lat.value)
-            
-        availability = {
-            'sta_available': sta_available,
-            'stb_available': stb_available,
-            'mes_available': mes_available,
-            'vex_available': vex_available,
-            'solo_available': solo_available,
-            'psp_available': psp_available,
-            'bepi_available': bepi_available
-        }
-        
-        positions = {
-            'L1_lon': L1_lon,
-            'mercury_lon': mercury_lon,
-            'venus_lon': venus_lon,
-            'earth_lon': earth_lon,
-            'mars_lon': mars_lon,
-            'L1_r': L1_r,
-            'mercury_r': mercury_r,
-            'venus_r': venus_r,
-            'earth_r': earth_r,
-            'mars_r': mars_r,
-
-        }
-        
-        if stb_available:
-            # New entry as a dictionary
-            add_stb = {'stb_lon': stb_lon,
-                'stb_r': stb_r
-            }
-            # Adding the new entry using update()
-            positions.update(add_stb)
-        if sta_available:
-            # New entry as a dictionary
-            add_sta = {'sta_lon': sta_lon,
-                'sta_r': sta_r
-            }
-            # Adding the new entry using update()
-            positions.update(add_sta)
-        if mes_available:
-            # New entry as a dictionary
-            add_mes = {'mes_lon': mes_lon,
-                'mes_r': mes_r
-            }
-            # Adding the new entry using update()
-            positions.update(add_mes)
-        if vex_available:
-            # New entry as a dictionary
-            add_vex = {'vex_lon': vex_lon,
-                'vex_r': vex_r
-            }
-            # Adding the new entry using update()
-            positions.update(add_vex) 
-        if solo_available:
-            # New entry as a dictionary
-            add_solo = {'solo_lon': solo_lon,
-                'solo_r': solo_r
-            }
-            # Adding the new entry using update()
-            positions.update(add_solo)
-        if psp_available:
-            # New entry as a dictionary
-            add_psp = {'psp_lon': psp_lon,
-                'psp_r': psp_r
-            }
-            # Adding the new entry using update()
-            positions.update(add_psp)  
-        if bepi_available:
-            # New entry as a dictionary
-            add_bepi = {'bepi_lon': bepi_lon,
-                'bepi_r': bepi_r
-            }
-            # Adding the new entry using update()
-            positions.update(add_bepi)
-        if outer_system:
-            outer_planets = {'jupiter_r': jupiter_r,
-                            'saturn_r': saturn_r,
-                            'uranus_r': uranus_r,
-                            'neptune_r': neptune_r,
-                            'jupiter_lon': jupiter_lon,
-                            'saturn_lon': saturn_lon,
-                            'uranus_lon': uranus_lon,
-                            'neptune_lon': neptune_lon
-            }
-            positions.update(outer_planets)
+        if stb_available and HIobs == 'B':
+            d = stb_r
+            if stb_lon >=0:
+                direction = stb_lon - phi
+            else:
+                direction = stb_lon + phi
                 
         ############################################################################   
         # calculate angular separation of CME apex from each target
@@ -859,6 +880,11 @@ def main():
         
         gamma_valid, winds_valid, res_valid, tinit, rinit, vinit, swspeed, xdata, ydata = DBMfitting(time, R_elcon, prediction_path, det_plot, startfit=startcut, endfit=endcut)
         
+        # check if DBMfit found at least one converging result
+        if winds_valid[0] == 0:
+            nofit.append(runnumber)
+            continue
+        
         # make equidistant grid for ELEvo times, with 10 min resolution
 
         start_time = tinit
@@ -1050,53 +1076,87 @@ def main():
             if det_plot:
                 det_results = prediction
         else:
-            break
+            break   
     
-    #pdb.set_trace()
-        
-    if do_ensemble and any_dt_present:
-        ensemble.to_csv(prediction_path + 'ensemble.csv', na_rep='NaN')
-        ensemble_results = assess_ensemble(ensemble, det_results, det_run_no)
-        ensemble_results.to_csv(prediction_path + 'ensemble_results.csv', na_rep='NaN')
-        
-        #pdb.set_trace()
-        
-        target_names = ensemble_results['target'].unique()
-        
-        print(' ')
-        print('------ELEvoHI ensemble modelling------')
-        print('Targets:')
-        
-        for i in range(0, len(target_names)):
-            if target_names[i] == 'No hit!':
-                #print('target_names (c): ', target_names[i])
-                continue
+    if (ensemble['target'] == 'No hit!').all():
+        print('')
+        print('*******************************************************************')
+        print('For these settings no hit is predicted at any spacecraft or planet.')
+        print('*******************************************************************')
+        print('')
+    else:       
+        if do_ensemble:
+            ensemble.to_csv(prediction_path + 'ensemble.csv', na_rep='NaN')
+            #pdb.set_trace()
+            if det_run_no in nofit:
+                no_det_run = True
+                det_results = np.nan
+            ensemble_results = assess_ensemble(ensemble, det_results, det_run_no, no_det_run)
+            ensemble_results.to_csv(prediction_path + 'ensemble_results.csv', na_rep='NaN')
             
-            print('       ========')
-            print('       ', ensemble_results['target'].iloc[i])
-            print('       --------')
-            print('        Arrival Probability: ', ensemble_results['likelihood [%]'].iloc[i], '%')
-            print('        Mean Arrival Time [UT]: ', ensemble_results['arrival time (mean) [UT]'].iloc[i], '+/-', ensemble_results['arrival time (std dev) [h]'].iloc[i], ' hours')
-            print('        Mean Arrival Speed [km/s]: ', ensemble_results['arrival speed (mean) [km/s]'].iloc[i], '+/-', ensemble_results['arrival speed (std dev) [km/s]'].iloc[i], 'km/s')
-            print('       --------')
-        print('Ensemble size: ', num_points_phi * num_points_f * num_points_lambda)
-        print('Deterministic run ist run number', det_run_no)
-    
-    if any_dt_present:   
-        det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[0]
-        det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[0]  
+            #pdb.set_trace()
+            target_names = ensemble_results['target'].unique()
+            
+            print(' ')
+            print('------ELEvoHI ensemble modelling------')
+            print('Targets:')
+            
+            for i in range(0, len(target_names)):
+                if target_names[i] == 'No hit!':
+                    #print('target_names (c): ', target_names[i])
+                    continue
+                
+                print('       ========')
+                print('       ', ensemble_results['target'].iloc[i])
+                print('       --------')
+                print('        Arrival Probability: ', ensemble_results['likelihood [%]'].iloc[i], '%')
+                print('        Mean Arrival Time [UT]: ', ensemble_results['arrival time (mean) [UT]'].iloc[i], '+/-', ensemble_results['arrival time (std dev) [h]'].iloc[i], ' hours')
+                print('        Mean Arrival Speed [km/s]: ', ensemble_results['arrival speed (mean) [km/s]'].iloc[i], '+/-', ensemble_results['arrival speed (std dev) [km/s]'].iloc[i], 'km/s')
+                print('       --------')
+            print('Ensemble size: ', num_points_phi * num_points_f * num_points_lambda)
+            print('Deterministic run ist run number', det_run_no)
         
+        #if any_dt_present: 
+            
         txt_file = prediction_path + 'notes.txt'
+        
+        if no_det_run:
+            with open(txt_file, 'a') as file:
+                # Write the value to the file
+                file.write('Run number of deterministic run:' + '\n')
+                file.write(str(det_run_no) +  '\n')
+                file.write('No fit possible for deterministic run!' + '\n')
+                file.write('No DBMfit for runnumbers:' + '\n')
+                file.write(str(nofit))
+        else:
+            det_run_count = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values
+        
+            for idx, value in enumerate(det_run_count):
+                
+                txt_file = prediction_path + 'notes.txt'
+                
+                if np.isnan(value):              
+                    continue
+                else:               
+                    det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[idx]
+                    det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[idx]  
 
-        # Open the file in write mode ('w')
-        with open(txt_file, 'w') as file:
-            # Write the value to the file
-            file.write('Run number of deterministic run:' + '\n')
-            file.write(str(det_run_no) +  '\n')
-            file.write('Difference in arrival time:' + '\n')
-            file.write(str(det_run_dt) +  '\n')
-            file.write('Difference in arrival speed:' + '\n')
-            file.write(str(det_run_dv))
+                    # Open the file in write mode ('w')
+                    with open(txt_file, 'a') as file:
+                        # Write the value to the file
+                        file.write('Run number of deterministic run:' + '\n')
+                        file.write(str(det_run_no) +  '\n')
+                        file.write('Difference in arrival time:' + '\n')
+                        file.write(str(det_run_dt) +  '\n')
+                        file.write('Difference in arrival speed:' + '\n')
+                        file.write(str(det_run_dv) +  '\n')
+                        file.write('No DBMfit for runnumbers:' + '\n')
+                        file.write(str(nofit))
+                        
+            if not Path(txt_file).exists():
+                with open(txt_file, 'a') as file:
+                    file.write('No DBMfit for runnumbers:' + '\n')
+                    file.write(str(nofit))
         
     # Record the end time of ELEvoHI
     e_ti = ti.time()

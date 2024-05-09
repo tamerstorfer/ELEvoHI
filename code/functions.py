@@ -531,10 +531,23 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     
     # find the most accurate fitting parameters based on the minimum mean residual
     
-    gamma_valid = np.array(gamma_v)   
-    res_valid = np.array(res_v)   
-    winds_valid = np.array(winds_v)   
-    min_res = np.argmin(np.abs(res_valid))
+    if len(gamma_v) != 0:
+        gamma_valid = np.array(gamma_v)   
+        res_valid = np.array(res_v)   
+        winds_valid = np.array(winds_v)   
+        min_res = np.argmin(np.abs(res_valid))
+    else:
+        print('No DBMfit possible for these model settings.')
+        gamma_valid = 0
+        winds_valid = [0,0]
+        res_valid = 0
+        tinit = 0
+        rinit = 0
+        vinit = 0
+        swspeed = 0
+        xdata = 0
+        ydata = 0
+        return gamma_valid, winds_valid, res_valid, tinit, rinit, vinit, swspeed, xdata, ydata
        
     print('')
     print('===========================================================')
@@ -1501,7 +1514,7 @@ def assess_prediction(prediction, target, is_time, is_speed):
             
     return arrival_dt, arrival_dv, prediction
 
-def assess_ensemble(ensemble, det_results, det_run_no):
+def assess_ensemble(ensemble, det_results, det_run_no, no_det_run):
     
     ensemble_results = pd.DataFrame()
     
@@ -1513,8 +1526,6 @@ def assess_ensemble(ensemble, det_results, det_run_no):
     for i in range(0, len(target_names)):
         if target_names[i] == 'No hit!':
             continue
-        
-        j = j + 1
         
         print('target_names: ', target_names[i])
         
@@ -1539,13 +1550,19 @@ def assess_ensemble(ensemble, det_results, det_run_no):
         tmp_ensemble_results.loc[j, 'target'] = target_names[i]
         tmp_ensemble_results['likelihood [%]'] = round(count/(number_of_runs * 0.01))
         
-        if (det_results['target'] == target_names[i]).any():
-            tmp_ensemble_results['arrival time (det) [UT]'] = det_results['arrival time [UT]'][0]
-            tmp_ensemble_results['arrival speed (det) [km/s]'] = det_results['arrival speed [km/s]'][0]
-            #pdb.set_trace()
-        else:
-            tmp_ensemble_results['arrival time (det) [UT]'] = 'No hit!'
+        #pdb.set_trace()
+        if no_det_run:
+            tmp_ensemble_results['arrival time (det) [UT]'] = 'No fit possible!'
             tmp_ensemble_results['arrival speed (det) [km/s]'] = np.nan
+        else:
+            if (det_results['target'] == target_names[i]).any():
+                #pdb.set_trace()
+                tmp_ensemble_results['arrival time (det) [UT]'] = det_results['arrival time [UT]'][j]
+                tmp_ensemble_results['arrival speed (det) [km/s]'] = det_results['arrival speed [km/s]'][j]
+                #pdb.set_trace()
+            else:
+                tmp_ensemble_results['arrival time (det) [UT]'] = 'No hit!'
+                tmp_ensemble_results['arrival speed (det) [km/s]'] = np.nan
                         
         tmp_ensemble_results['arrival time (mean) [UT]'] = mean_arrival_time
         tmp_ensemble_results['arrival time (median) [UT]'] = median_arrival_time
@@ -1564,6 +1581,7 @@ def assess_ensemble(ensemble, det_results, det_run_no):
                        
         ensemble_results = pd.concat([ensemble_results, tmp_ensemble_results])
         
+        j = j + 1
     
     #pdb.set_trace()
     
