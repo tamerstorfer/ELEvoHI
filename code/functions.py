@@ -358,7 +358,7 @@ def cost_functionneg(gamma):
 
 def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfit = 20, silent = 1, max_residual = 1.5, max_gamma = 3e-7):
     """ fit the ELCon time-distance track using the drag-based equation of motion from Vrsnak et al. (2013) """
-    global tinit, rinit, vinit, swspeed, xdata, ydata
+    global tinit, rinit, vinit, swspeed, xdata, ydata, runnumber
 
     # start end end points of fitting.
     # This was done manually so far, but should be implemented in a way that it is done automatically.
@@ -386,8 +386,9 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     rinit = distance_km[startfit]
     vinit = speed[startfit]
 
-    xdata = speedtime[startfit:endfit]
-    ydata = distance_km[startfit:endfit]
+    xdata_ps = speedtime[startfit:endfit]
+    ydata = distance_km[startfit:endfit] 
+    xdata = xdata_ps.to_numpy()
 
     winds = np.arange(200, 775, 25)
     fit = np.zeros((len(winds), len(xdata)))
@@ -429,7 +430,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
         else:
             # Perform the optimization
-            result = minimize(cost_functionneg, initial_guess, method='Nelder-Mead')
+            result = minimize(cost_functionneg, initial_guess, method='Nelder-Mead', tol=1e-1)
             if silent == 0:
                 print('=====')
                 print('wind: ', winds[i], 'success: ', result.success)
@@ -576,7 +577,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     
     return gamma_valid, winds_valid, res_valid, tinit, rinit, vinit, swspeed, xdata, ydata
 
-def elevo_analytic(R, f, halfwidth, delta, out=False, plot=False):
+def elevo_analytic(R, f, halfwidth, delta, runnumber, out=False, plot=False):
     """
     Calculate the distance from the Sun to a point along an ellipse in the ecliptic plane, which 
     describes the front of a solar transient. This point is specified by the angle delta 
@@ -607,11 +608,11 @@ def elevo_analytic(R, f, halfwidth, delta, out=False, plot=False):
     
     aspectratio = 1/f
 
-    if abs(delta) >= halfwidth:
-        # Half width lambda must be greater than delta!
-        n = R * np.nan
-        print("No hit predicted for this target.")
-        return n
+    #if round(np.rad2deg(abs(delta))) >= round(np.rad2deg(halfwidth)):
+    #    # Half width lambda must be greater than delta!
+    #    n = R * np.nan
+    #    print("No hit predicted for this target.")
+    #    return n
 
     # Construct ellipse
     theta = np.arctan(f**2 * np.tan(halfwidth))
@@ -636,13 +637,14 @@ def elevo_analytic(R, f, halfwidth, delta, out=False, plot=False):
         # Distance from Sun of given point along ellipse front
         root = np.sqrt(np.sin(delta)**2 * f**2 * (b**2 - c**2) + np.cos(delta)**2 * b**2)
         dvalue_analytic_front = (c * np.cos(delta) + root) / (np.sin(delta)**2 * f**2 + np.cos(delta)**2)
-        dvalue_analytic_rear = (c * np.cos(delta) - root) / (np.sin(delta)**2 * f**2 + np.cos(delta)**2)
+        #dvalue_analytic_rear = (c * np.cos(delta) - root) / (np.sin(delta)**2 * f**2 + np.cos(delta)**2)
         dvalue = dvalue_analytic_front
+        
         if out:
             print('distance d in AU: ', dvalue)
         return dvalue
    
-def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, movie=False, timegrid = 1440):
+def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, movie=False, timegrid = 1440):
     # calculate ELEvo radial distances in direction of each target and
     # arrival times and speeds
     
@@ -748,10 +750,16 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     
     hit = 0
     
+    #if runnumber == 137:
+     #   print('halfwidth:', np.rad2deg(halfwidth))
+      #  print('direction:', np.rad2deg(direction))
+       # print('f:', f)
+        #pdb.set_trace()
+    
 
     if sta_available == 1 and hit_sta == 1:
         ############# STEREO-A #############
-        d_sta = elevo_analytic(R, f, halfwidth, delta_sta, out=False)
+        d_sta = elevo_analytic(R, f, halfwidth, delta_sta, runnumber, out=False)
 
         # Find the index of the closest value
         index_sta = np.argmin(np.abs(d_sta - sta_r))
@@ -775,7 +783,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if stb_available == 1 and hit_stb == 1:
         ############# STEREO-B #############
-        d_stb = elevo_analytic(R, f, halfwidth, delta_stb, out=False)
+        d_stb = elevo_analytic(R, f, halfwidth, delta_stb, runnumber, out=False)
 
         # Find the index of the closest value
         index_stb = np.argmin(np.abs(d_stb - stb_r))
@@ -799,7 +807,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         
     if mes_available == 1 and hit_mes == 1:
         ############# MESSENGER #############
-        d_mes = elevo_analytic(R, f, halfwidth, delta_mes, out=False)
+        d_mes = elevo_analytic(R, f, halfwidth, delta_mes, runnumber, out=False)
 
         # Find the index of the closest value
         index_mes = np.argmin(np.abs(d_mes - mes_r))
@@ -823,7 +831,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         
     if vex_available == 1 and hit_vex == 1:
         ############# Venus Express #############
-        d_vex = elevo_analytic(R, f, halfwidth, delta_vex, out=False)
+        d_vex = elevo_analytic(R, f, halfwidth, delta_vex, runnumber, out=False)
 
         # Find the index of the closest value
         index_vex = np.argmin(np.abs(d_vex - vex_r))
@@ -847,7 +855,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if solo_available == 1 and hit_solo == 1:
         ############# Solar Orbiter #############
-        d_solo = elevo_analytic(R, f, halfwidth, delta_solo, out=False)
+        d_solo = elevo_analytic(R, f, halfwidth, delta_solo, runnumber, out=False)
 
         # Find the index of the closest value
         index_solo = np.argmin(np.abs(d_solo - solo_r))
@@ -871,7 +879,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if psp_available == 1 and hit_psp == 1:
         ############# Parker Solar Probe #############
-        d_psp = elevo_analytic(R, f, halfwidth, delta_psp, out=False)
+        d_psp = elevo_analytic(R, f, halfwidth, delta_psp, runnumber, out=False)
 
         # Find the index of the closest value
         index_psp = np.argmin(np.abs(d_psp - psp_r))
@@ -895,7 +903,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if bepi_available == 1 and hit_bepi == 1:
         ############# BepiColombo #############
-        d_bepi = elevo_analytic(R, f, halfwidth, delta_bepi, out=False)
+        d_bepi = elevo_analytic(R, f, halfwidth, delta_bepi, runnumber, out=False)
 
         # Find the index of the closest value
         index_bepi = np.argmin(np.abs(d_bepi - bepi_r))
@@ -919,7 +927,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if hit_mercury == 1:
         ############# Mercury #############
-        d_mercury = elevo_analytic(R, f, halfwidth, delta_mercury, out=False)
+        d_mercury = elevo_analytic(R, f, halfwidth, delta_mercury, runnumber, out=False)
 
         # Find the index of the closest value
         index_mercury = np.argmin(np.abs(d_mercury - mercury_r))
@@ -943,7 +951,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if hit_venus == 1:
         ############# Venus #############
-        d_venus = elevo_analytic(R, f, halfwidth, delta_venus, out=False)
+        d_venus = elevo_analytic(R, f, halfwidth, delta_venus, runnumber, out=False)
 
         # Find the index of the closest value
         index_venus = np.argmin(np.abs(d_venus - venus_r))
@@ -967,7 +975,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if hit_L1 == 1:
         ############# L1 #############
-        d_L1 = elevo_analytic(R, f, halfwidth, delta_L1, out=False)
+        d_L1 = elevo_analytic(R, f, halfwidth, delta_L1, runnumber, out=False)
 
         # Find the index of the closest value
         index_L1 = np.argmin(np.abs(d_L1 - L1_r))
@@ -991,7 +999,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
     if hit_mars == 1:
         ############# Mars #############
-        d_mars = elevo_analytic(R, f, halfwidth, delta_mars, out=False)
+        d_mars = elevo_analytic(R, f, halfwidth, delta_mars, runnumber, out=False)
 
         # Find the index of the closest value
         index_mars = np.argmin(np.abs(d_mars - mars_r))
@@ -1017,7 +1025,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
         if hit_jupiter == 1:
             ############# Jupiter #############
-            d_jupiter = elevo_analytic(R, f, halfwidth, delta_jupiter, out=False)
+            d_jupiter = elevo_analytic(R, f, halfwidth, delta_jupiter, runnumber, out=False)
 
             # Find the index of the closest value
             index_jupiter = np.argmin(np.abs(d_jupiter - jupiter_r))
@@ -1041,7 +1049,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
         if hit_saturn == 1:
             ############# Saturn #############
-            d_saturn = elevo_analytic(R, f, halfwidth, delta_saturn, out=False)
+            d_saturn = elevo_analytic(R, f, halfwidth, delta_saturn, runnumber, out=False)
 
             # Find the index of the closest value
             index_saturn = np.argmin(np.abs(d_saturn - saturn_r))
@@ -1065,7 +1073,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
         if hit_uranus == 1:
             ############# Uranus #############
-            d_uranus = elevo_analytic(R, f, halfwidth, delta_uranus, out=False)
+            d_uranus = elevo_analytic(R, f, halfwidth, delta_uranus, runnumber, out=False)
 
             # Find the index of the closest value
             index_uranus = np.argmin(np.abs(d_uranus - uranus_r))
@@ -1089,7 +1097,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
 
         if hit_neptune == 1:
             ############# Neptune #############
-            d_neptune = elevo_analytic(R, f, halfwidth, delta_neptune, out=False)
+            d_neptune = elevo_analytic(R, f, halfwidth, delta_neptune, runnumber, out=False)
 
             # Find the index of the closest value
             index_neptune = np.argmin(np.abs(d_neptune - neptune_r))
@@ -1231,7 +1239,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             t = (np.arange(181) * np.pi/180) - direction
             t1 = (np.arange(181) * np.pi/180)
 
-            a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., out=False, plot=True)
+            a, b, c = elevo_analytic(R[k]*AU, f, halfwidth, 0., runnumber, out=False, plot=True)
             a = a/AU
             b = b/AU
             c = c/AU
@@ -1571,13 +1579,8 @@ def assess_ensemble(ensemble, det_results, det_run_no, no_det_run):
         tmp_ensemble_results['arrival speed (median) [km/s]'] = round(median_arrival_speed)
         tmp_ensemble_results['arrival speed (std dev) [km/s]'] = std_dev_speed
         
-        tmp_ensemble_results['ME (t)'] = round(ensemble[ensemble['target'] == target_names[i]]['dt [h]'].mean(), 2)       
-        tmp_ensemble_results['MAE (t)'] = round(ensemble[ensemble['target'] == target_names[i]]['dt [h]'].abs().mean(), 2)   
-        tmp_ensemble_results['RMSE (t)'] = round(np.sqrt(((ensemble[ensemble['target'] == target_names[i]]['dt [h]'])**2).mean()), 2)
-        
-        tmp_ensemble_results['ME (v)'] = round(ensemble[ensemble['target'] == target_names[i]]['dv [km/s]'].mean(), 2)       
-        tmp_ensemble_results['MAE (v)'] = round(ensemble[ensemble['target'] == target_names[i]]['dv [km/s]'].abs().mean(), 2)   
-        tmp_ensemble_results['RMSE (v)'] = round(np.sqrt(((ensemble[ensemble['target'] == target_names[i]]['dv [km/s]'])**2).mean()), 2)
+        tmp_ensemble_results['dt (mean)'] = round(ensemble[ensemble['target'] == target_names[i]]['dt [h]'].mean(), 2)               
+        tmp_ensemble_results['dv (mean)'] = round(ensemble[ensemble['target'] == target_names[i]]['dv [km/s]'].mean(), 2)       
                        
         ensemble_results = pd.concat([ensemble_results, tmp_ensemble_results])
         
