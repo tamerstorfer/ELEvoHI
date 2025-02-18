@@ -55,16 +55,20 @@ HI observer (A, B, PSP*, SolO*)
 quality of HI data (beacon, science)
 
     "phi_FPF": true,
-Set true if you want to run FPF in advance to derive the direction of motion
+Set true if you want to run FPF in advance to derive the direction of motion.
+Set false if you derive the direction from another source.
 
-    "phi_manual": 71,
+    "phi_manual": [71, 61, 81]
 Propagation direction in degree of the CME apex relative to the HI observer. This parameter is ignored if FPF is set to true.
+First entry is the direction for the deterministic run, second (third) entry is the lower (upper) value of the ensemble.
 
-    "f": 0.7,
+    "f": [0.8, 0.7, 0.9]
 inverse ellipse aspect ratio (1 means circular, smaller values correspond to a flattened front)
+First entry is the inverse aspect ratio for the deterministic run, second (third) entry is the lower (upper) value of the ensemble.
 
-    "halfwidth": 45,
-half width in degree within the ecliptic plane (minimum: 1, maximum: 90)
+    "halfwidth": [39, 29, 49]
+Halfwidth in degree within the ecliptic plane (minimum: 1, maximum: 90).
+First entry is the halfwidth for the deterministic run, second (third) entry is the lower (upper) value of the ensemble.
 
     "startcut": 0,
 When our STEREO-HI-Data-Processing tool is used to measure the CME front, the track consists of 30 time-elongation pairs.

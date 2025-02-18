@@ -58,7 +58,8 @@ def main():
     
     year = eventdate[:4]
     #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
-    event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
+    #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
+    event_path = '/Users/tanja/Desktop/ELEvoHI_test/' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
     
     # logging runnumbers for which no DBMfit converges
@@ -96,11 +97,11 @@ def main():
             start_phi = np.deg2rad(config['phi_manual'][1])    
             end_phi = np.deg2rad(config['phi_manual'][2])
             num_points_phi = int(round((config['phi_manual'][2] - config['phi_manual'][1])/np.rad2deg(p_step) + 1))
-        
-    det_run = [phi, f, halfwidth]
     
     phi = np.deg2rad(phi)
     halfwidth = np.deg2rad(halfwidth)
+    
+    det_run = [phi, f, halfwidth]
     
     #pdb.set_trace()
     if do_ensemble:
@@ -232,6 +233,8 @@ def main():
         runnumber = 0
         ensemble = pd.DataFrame()
     else:
+        runnumber = 0
+        ensemble = pd.DataFrame()
         lambda_values = np.linspace(0, 10, 11)
         phi_values = np.linspace(0, 10, 11)
         f_values = np.linspace(0, 10, 11)
@@ -860,8 +863,8 @@ def main():
         
         if not do_ensemble:
             det_plot = True
-        else:
-            if det_run == [round(np.rad2deg(phi)), round(f, 1), round(np.rad2deg(halfwidth))]:
+        else:   
+            if round(np.rad2deg(det_run[0])) == round(np.rad2deg(phi)) and round(det_run[1]) == round(f, 1) and round(np.rad2deg(det_run[2])) == round(np.rad2deg(halfwidth)) :
                 det_plot = True
                 print('det_run set to True in ensemble!')
                 det_run_no = runnumber
