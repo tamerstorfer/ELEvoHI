@@ -55,13 +55,14 @@ def main():
     movie = config['movie']
     silent = config['silent']
     do_ensemble = config['do_ensemble']
+    endtime = datetime.strptime(config['endtime'], "%Y-%m-%d %H:%M")
     
     year = eventdate[:4]
     #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
-    event_path = '/Users/tanja/Desktop/ELEvoHI_test/' + eventdate + '/'
+    event_path = '../../' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
-    
+
     # logging runnumbers for which no DBMfit converges
     nofit = []
     
@@ -72,7 +73,15 @@ def main():
     
     # combines the time-elongation tracks into one average track on a equitemporal time-axis
     # includes standard deviation and saves a figure to the predictions folder
-    track = merge_tracks(event_path, prediction_path)
+    track = merge_tracks(event_path, prediction_path,cadence=20)
+    ind = np.argwhere(track["time"]<endtime)[:,0]
+    times = track["time"].values[ind]
+    elong = track["elongation"].values[ind]
+    stds  = track["std"].values[ind]
+    track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
+
+
+
     
     # ELEvoHI ensemble
     # Define the range of values for each parameter to build the ensemble
@@ -215,7 +224,7 @@ def main():
     # copy config file to prediction folder to save it as run-reference
     shutil.copy(basic_path + 'ELEvoHI/code/config.json', prediction_path)
  
-    elon = track["elongation"]
+    elon = track["elongation"].values
 
     # Convert the "time" column to datetime objects
     track["time"] = pd.to_datetime(track["time"])
@@ -956,9 +965,9 @@ def main():
             
         print('Drag parameter: ', formatted_drag, 'e-7 /km')
         print('Ambient solar wind speed: ', winds, 'km/s')
-        print('Elongation range used for prediction:', round(elon[startcut], 1), '-', round(elon[endcut-1], 1),' degree')
-        print('Corresponding heliocentric distance [AU]:', round(R_elcon[startcut], 2), '-', round(R_elcon[endcut-1], 2),' AU')
-        print('Corresponding heliocentric distance [Rsun]:', round(R_elcon[startcut]*AU/rsun, 1), '-', round(R_elcon[endcut-1]*AU/rsun, 1),' Rsun')
+        print('Elongation range used for prediction:', round(elon[startcut], 1), '-', round(elon[-1], 1),' degree')
+        print('Corresponding heliocentric distance [AU]:', round(R_elcon[startcut], 2), '-', round(R_elcon[-1], 2),' AU')
+        print('Corresponding heliocentric distance [Rsun]:', round(R_elcon[startcut]*AU/rsun, 1), '-', round(R_elcon[-1]*AU/rsun, 1),' Rsun')
         print('')
         print('Drag parameter:', round(gamma*1e7, 2), '1e-7')
         print('Ambient solar wind speed:', winds, 'km/s')
@@ -1059,7 +1068,7 @@ def main():
             tmp_ensemble['startcut'] = startcut
             tmp_ensemble['endcut'] = endcut
             tmp_ensemble['elongation min. [°]'] = round(elon[startcut], 1)
-            tmp_ensemble['elongation max. [°]'] = round(elon[endcut-1], 1)
+            tmp_ensemble['elongation max. [°]'] = round(elon[-1], 1)
             tmp_ensemble['tinit [UT]'] = tinit.strftime("%Y-%m-%d %H:%M")
             tmp_ensemble['rinit [R_sun]'] = round(rinit/rsun)
             tmp_ensemble['vinit [km/s]'] = round(vinit)

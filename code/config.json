@@ -1,22 +1,38 @@
 {
-    "basic_path": "/Users/tanja/",
-    "eventdate": "20091216",
-    "HIobs": "B",
+    "basic_path": "../../",
+    "eventdate": "20201207_david",
+    "HIobs": "A",
     "mode": "science",
-    "do_ensemble": true,
-    "phi_FPF": true,
-    "phi_FPF_range": [10, 10],
-    "phi_manual": [64, 60, 68], 
-    "phi_step": 2,  
-    "f": [0.8, 0.7, 1],
+    "do_ensemble": false,
+    "phi_FPF": false,
+    "phi_FPF_range": [
+    10,
+    10
+    ],
+    "phi_manual": [
+    72,
+    62,
+    82
+    ],
+    "phi_step": 2,
+    "f": [
+    0.8,
+    0.7,
+    1
+    ],
     "f_step": 0.1,
-    "halfwidth": [25, 15, 35],
+    "halfwidth": [
+    52,
+    42,
+    62
+    ],
     "halfwidth_step": 5,
     "startcut": 0,
     "endcut": 30,
+    "endtime":"2020-12-08 11:50",
     "outer_system": false,
     "movie": false,
     "silent": true,
-    "L1_ist_obs": "2009-12-19 10:00",
-    "L1_isv_obs": 430
-}
+    "L1_ist_obs": "2020-12-10 02:10",
+    "L1_isv_obs": 481
+    }

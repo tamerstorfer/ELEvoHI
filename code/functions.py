@@ -5,7 +5,7 @@ import matplotlib as mpl
 from scipy.optimize import curve_fit
 from scipy.optimize import minimize
 from scipy.interpolate import interp1d
-from datetime import datetime
+from datetime import datetime,timedelta
 import matplotlib.dates as mdates
 from astropy.time import Time as atime
 import matplotlib.patheffects as path_effects
@@ -30,12 +30,12 @@ def load_config(config_path):
         config = json.load(f)
     return config
 
-def calculate_new_time_axis(start_time, end_time, num_elements):
+def calculate_new_time_axis(start_time, end_time, cadence):
     # Function to calculate new time axis
-    time_step = (end_time - start_time) / (num_elements - 1)
-    return pd.date_range(start=start_time, end=end_time, freq=time_step)
+    timerange =  pd.date_range(start=start_time, end=end_time+timedelta(minutes=cadence//4), freq=str(cadence)+"min")
+    return timerange
 
-def merge_tracks(event_path, prediction_path):
+def merge_tracks(event_path, prediction_path,cadence=40):
     
     if not os.path.exists(prediction_path):
         os.mkdir(prediction_path)
@@ -43,16 +43,13 @@ def merge_tracks(event_path, prediction_path):
     # Set Seaborn's color palette to a colorblind-friendly palette
     sns.set_palette("colorblind")
 
-    # Create an array to store mean values
-    mean_values = np.zeros(30)
-    std_values = np.zeros(30)
     
     plt.figure(figsize=(10, 6), facecolor='white')
 
     # List all files in the folder with .csv ending
     files = [file for file in os.listdir(event_path) if file.endswith('.csv')]
     
-    interpolated_tracks = np.zeros((len(files),30))
+    
 
     # Calculate common new time axis
     all_time_data = []
@@ -62,7 +59,9 @@ def merge_tracks(event_path, prediction_path):
 
     min_time = min(all_time_data)
     max_time = max(all_time_data)
-    new_time_axis = calculate_new_time_axis(min_time, max_time, num_elements=30)
+    new_time_axis = calculate_new_time_axis(min_time, max_time, cadence=cadence)
+
+    interpolated_tracks = np.zeros((len(files),new_time_axis.shape[0]))
 
     # Get a list of distinguishable colors from the colorblind palette
     num_colors = len(files)
@@ -129,7 +128,7 @@ def merge_tracks(event_path, prediction_path):
     plt.xticks(rotation=45, ha="right")
 
     # Show the plot
-    #plt.show()
+    # plt.show()
     
     plt.savefig(prediction_path+'tracks.png', dpi=300, bbox_inches='tight')
     
@@ -386,9 +385,8 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     rinit = distance_km[startfit]
     vinit = speed[startfit]
 
-    xdata_ps = speedtime[startfit:endfit]
-    ydata = distance_km[startfit:endfit] 
-    xdata = xdata_ps.to_numpy()
+    xdata = speedtime.values
+    ydata = distance_km
 
     winds = np.arange(200, 775, 25)
     fit = np.zeros((len(winds), len(xdata)))
@@ -456,7 +454,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
     for i in range(len(winds)):
         if success[i]:
-            res[i] = np.mean(residuals[i,:])
+            res[i] = np.mean(np.abs(residuals[i,:]))
         else:
             res[i] = np.nan
     
@@ -507,7 +505,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 print('Mean Residual: ', round(res[i]/rsun, 2), 'solar radii')
                 print('Wind speed: ', winds[i])
             if det_plot:
-                ax.plot(distance_rsun[startfit:endfit], fitspeed[i,:], '-', label='fit', c=cmap.to_rgba(winds[i]))
+                ax.plot(distance_rsun, fitspeed[i,:], '-', label='fit', c=cmap.to_rgba(winds[i]))
         else:
             if silent == 0:
                 print('------------')
@@ -562,7 +560,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     print('')
 
     # Get the indices that would sort the array based on absolute values
-    sorted_indices = np.argsort(np.abs(res_valid))
+    sorted_indices = np.argsort(res_valid)
     gamma_valid = gamma_valid[sorted_indices]
     res_valid = res_valid[sorted_indices]
     winds_valid = winds_valid[sorted_indices]
