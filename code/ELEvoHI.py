@@ -24,7 +24,7 @@ import shutil
 import pdb
 import time as ti
 
-from functions import load_config, calculate_new_time_axis, merge_tracks, fpf_function, fpf, ELCon, fitdbm, fitdbmneg, cost_function, cost_functionneg, DBMfitting, elevo_analytic, elevo, assess_prediction, assess_ensemble
+from functions import load_config,  merge_tracks,  fpf, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble
 
 def main():
     
@@ -56,6 +56,7 @@ def main():
     silent = config['silent']
     do_ensemble = config['do_ensemble']
     endtime = datetime.strptime(config['endtime'], "%Y-%m-%d %H:%M")
+    starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
     
     year = eventdate[:4]
     #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
@@ -73,12 +74,30 @@ def main():
     
     # combines the time-elongation tracks into one average track on a equitemporal time-axis
     # includes standard deviation and saves a figure to the predictions folder
-    track = merge_tracks(event_path, prediction_path,cadence=20)
+    newtime_axis = pd.date_range(start=starttime, end=endtime, freq=str(40)+"min")
+
+
+    track = merge_tracks(event_path, prediction_path,cadence=10,new_time_axis=newtime_axis)
     ind = np.argwhere(track["time"]<endtime)[:,0]
     times = track["time"].values[ind]
     elong = track["elongation"].values[ind]
     stds  = track["std"].values[ind]
     track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
+
+
+    track2 = merge_tracks(event_path.replace("tanja","david"), prediction_path.replace("tanja","david"),cadence=40,new_time_axis=newtime_axis)
+    ind = np.argwhere(track2["time"]<endtime)[:,0]
+    times  = track2["time"].values[ind]
+    elong  = track2["elongation"].values[ind]
+    stds   = track2["std"].values[ind]
+    track2 = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
+
+
+    # plt.plot(track["time"],track["elongation"],label="tanja")
+    # plt.plot(track2["time"],track2["elongation"],label="david")
+    # plt.legend()
+    # plt.show()
+
 
 
 

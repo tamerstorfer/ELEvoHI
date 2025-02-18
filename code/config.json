@@ -1,6 +1,6 @@
 {
     "basic_path": "../../",
-    "eventdate": "20201207_david",
+    "eventdate": "20201207_tanja",
     "HIobs": "A",
     "mode": "science",
     "do_ensemble": false,
@@ -29,6 +29,7 @@
     "halfwidth_step": 5,
     "startcut": 0,
     "endcut": 30,
+    "starttime":"2020-12-07 18:43",
     "endtime":"2020-12-08 11:50",
     "outer_system": false,
     "movie": false,

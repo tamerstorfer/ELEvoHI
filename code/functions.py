@@ -35,7 +35,7 @@ def calculate_new_time_axis(start_time, end_time, cadence):
     timerange =  pd.date_range(start=start_time, end=end_time+timedelta(minutes=cadence//4), freq=str(cadence)+"min")
     return timerange
 
-def merge_tracks(event_path, prediction_path,cadence=40):
+def merge_tracks(event_path, prediction_path,cadence=40,new_time_axis=None):
     
     if not os.path.exists(prediction_path):
         os.mkdir(prediction_path)
@@ -59,7 +59,8 @@ def merge_tracks(event_path, prediction_path,cadence=40):
 
     min_time = min(all_time_data)
     max_time = max(all_time_data)
-    new_time_axis = calculate_new_time_axis(min_time, max_time, cadence=cadence)
+    if(new_time_axis is None):
+        new_time_axis = calculate_new_time_axis(min_time, max_time, cadence=cadence)
 
     interpolated_tracks = np.zeros((len(files),new_time_axis.shape[0]))
 
@@ -335,29 +336,33 @@ def ELCon(elon, d, phi, hwidth, f):
         
     return R_ell
 
-def fitdbm(x, gamma):
+def fitdbm(x, gamma,vinit,swspeed,rinit):
     """ function to fit time-distance profile of CME """   
     fit = (1/gamma) * np.log(1 + gamma*(vinit - swspeed) * x) + swspeed*x + rinit
     
     return fit
 
-def fitdbmneg(x, gamma):
-    """ function to fit time-distance profile of CME """   
-    fit = (-1/gamma) * np.log(1 - gamma*(vinit - swspeed) * x) + swspeed*x + rinit
+# def fitdbmneg(x, gamma):
+#     """ function to fit time-distance profile of CME """   
+#     fit = (-1/gamma) * np.log(1 - gamma*(vinit - swspeed) * x) + swspeed*x + rinit
     
-    return fit
+#     return fit
 
-def cost_function(gamma):
-    predicted = fitdbm(xdata, gamma)
+
+
+def cost_function(params,*args):
+    gamma = params
+    vinit,swspeed,rinit,ydata,x= args
+    predicted = fitdbm(x, gamma,vinit,swspeed,rinit)
     return np.sum((ydata - predicted) ** 2)
 
-def cost_functionneg(gamma):
-    predicted = fitdbmneg(xdata, gamma)
-    return np.sum((ydata - predicted) ** 2)
+# def cost_functionneg(gamma):
+#     predicted = fitdbmneg(xdata, gamma)
+#     return np.sum((ydata - predicted) ** 2)
 
 def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfit = 20, silent = 1, max_residual = 1.5, max_gamma = 3e-7):
     """ fit the ELCon time-distance track using the drag-based equation of motion from Vrsnak et al. (2013) """
-    global tinit, rinit, vinit, swspeed, xdata, ydata, runnumber
+    global  runnumber
 
     # start end end points of fitting.
     # This was done manually so far, but should be implemented in a way that it is done automatically.
@@ -388,6 +393,14 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     xdata = speedtime.values
     ydata = distance_km
 
+
+    testgamma = 1.7863506087704678e-08 
+    testwind  = 200
+
+    testy = (1/testgamma) * np.log(1 + testgamma*(vinit - testwind) * xdata) + testwind*xdata + rinit
+
+
+
     winds = np.arange(200, 775, 25)
     fit = np.zeros((len(winds), len(xdata)))
     fitspeed = np.zeros((len(winds), len(xdata)))
@@ -403,20 +416,23 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         swspeed = winds[i]
         if vinit > swspeed:
             # Perform the optimization
-            result = minimize(cost_function, initial_guess, method='Nelder-Mead')
+            result = minimize(cost_function, initial_guess,args=(vinit,swspeed,rinit,ydata,xdata), method='Nelder-Mead')
+            # gamma_fit, pcov = curve_fit(fitdbm, xdata, ydata,p0=initial_guess,method="dogbox")
             # Print the fitted parameter
             if silent == 0:
                 print('=====') 
                 print('wind: ', winds[i], 'success: ', result.success)
-            success[i] = result.success
+            success[i] = True
             if result.success:
                 gamma_fit = result.x[0]
                 if silent == 0:
                     print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
-                fit_ = fitdbm(xdata, gamma_fit)
+                # fit_ = fitdbm(xdata, gamma_fit)
+                fit_ = fitdbm(xdata,gamma_fit,vinit,swspeed,rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
-                residuals[i,:] = ydata - fit_
+                residuals[i,:] = np.abs(ydata - fit_)
+                
                 if silent == 0:
                     print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
                 fitspeed[i,:] = np.gradient(fit[i,:], xdata)
@@ -454,7 +470,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
     for i in range(len(winds)):
         if success[i]:
-            res[i] = np.mean(np.abs(residuals[i,:]))
+            res[i] = np.mean(residuals[i,:])
         else:
             res[i] = np.nan
     
@@ -486,12 +502,15 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     print(f"The drag parameter is limited to be a maximum of {max_gamma} /km.")
     print('')
 
+
+
+    residuals2 = []
     for i in range(len(winds)):
         if success[i] != True:
             continue
-        if np.abs(res[i]/rsun) > max_residual:
+        if res[i]/rsun > max_residual:
             continue
-        if gamma[i] < 0:
+        if gamma[i] <= 0:
             continue
         if max_gamma >= np.abs(gamma[i]):
             gamma_v.append(gamma[i])
@@ -564,6 +583,9 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     gamma_valid = gamma_valid[sorted_indices]
     res_valid = res_valid[sorted_indices]
     winds_valid = winds_valid[sorted_indices]
+
+
+   
     
     #pdb.set_trace()
     
@@ -572,6 +594,17 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')       
         fig.clf()
         plt.close(fig)
+
+
+    for i in range(0,5):
+        swspeed = winds_valid[i]
+        fit = fitdbm(xdata,gamma_valid[i],vinit,swspeed,rinit)
+        plt.scatter(xdata,fit,c=mpl.cm.tab20(i+1),label=str(i))
+    plt.plot(xdata,ydata,label="track")
+    # plt.fill_between(xdata, ydata, fit)
+    plt.legend()
+    plt.show()
+
     
     return gamma_valid, winds_valid, res_valid, tinit, rinit, vinit, swspeed, xdata, ydata
 
