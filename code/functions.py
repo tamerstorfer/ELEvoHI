@@ -349,12 +349,21 @@ def fitdbm(x, gamma,vinit,swspeed,rinit):
 #     return fit
 
 
+def logistic_growth(xdata,k):
+    return xdata.shape[0]/(1+np.exp(
+                                    -k*(
+                                        np.arange(1,xdata.shape[0]+1,1)-xdata.shape[0]//2
+                                        )
+                                    )
+                            )
+
 
 def cost_function(params,*args):
     gamma = params
     vinit,swspeed,rinit,ydata,x= args
     predicted = fitdbm(x, gamma,vinit,swspeed,rinit)
-    return np.sum((ydata - predicted) ** 2)
+
+    return np.median(np.sqrt((ydata - predicted) ** 2 ))# * logistic_growth(ydata,0.3)/logistic_growth(ydata,0.3).max() )
 
 # def cost_functionneg(gamma):
 #     predicted = fitdbmneg(xdata, gamma)
@@ -410,6 +419,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     
     # Initial guess for the parameter gamma
     initial_guess = 1e-7
+    k= 0.3
 
     # do a fit for each wind speed separately and plot valid fits
     for i in range(len(winds)):
@@ -431,7 +441,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 fit_ = fitdbm(xdata,gamma_fit,vinit,swspeed,rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
-                residuals[i,:] = np.abs(ydata - fit_)
+                residuals[i,:] = np.median(np.sqrt((ydata - fit_) ** 2 ))# * logistic_growth(ydata,k)/logistic_growth(ydata,k).max())
                 
                 if silent == 0:
                     print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
@@ -470,7 +480,8 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
     for i in range(len(winds)):
         if success[i]:
-            res[i] = np.mean(residuals[i,:])
+            res[i] = residuals[i,0] #np.mean(residuals[i,:])
+            print(res[i]/rsun)
         else:
             res[i] = np.nan
     
@@ -599,7 +610,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     for i in range(0,5):
         swspeed = winds_valid[i]
         fit = fitdbm(xdata,gamma_valid[i],vinit,swspeed,rinit)
-        plt.scatter(xdata,fit,c=mpl.cm.tab20(i+1),label=str(i))
+        plt.plot(xdata,fit,c=mpl.cm.tab20(i+1),label=str(swspeed)+"  "+str(round(gamma_valid[i]*10**8,2))+" "+str(res_valid[i]))
     plt.plot(xdata,ydata,label="track")
     # plt.fill_between(xdata, ydata, fit)
     plt.legend()

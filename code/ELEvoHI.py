@@ -77,20 +77,20 @@ def main():
     newtime_axis = pd.date_range(start=starttime, end=endtime, freq=str(40)+"min")
 
 
-    track = merge_tracks(event_path, prediction_path,cadence=10,new_time_axis=newtime_axis)
+    # track = merge_tracks(event_path, prediction_path,cadence=10,new_time_axis=newtime_axis)
+    # ind = np.argwhere(track["time"]<endtime)[:,0]
+    # times = track["time"].values[ind]
+    # elong = track["elongation"].values[ind]
+    # stds  = track["std"].values[ind]
+    # track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
+
+
+    track = merge_tracks(event_path.replace("tanja","david"), prediction_path.replace("tanja","david"),cadence=40,new_time_axis=newtime_axis)
     ind = np.argwhere(track["time"]<endtime)[:,0]
-    times = track["time"].values[ind]
-    elong = track["elongation"].values[ind]
-    stds  = track["std"].values[ind]
+    times  = track["time"].values[ind]
+    elong  = track["elongation"].values[ind]
+    stds   = track["std"].values[ind]
     track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
-
-
-    track2 = merge_tracks(event_path.replace("tanja","david"), prediction_path.replace("tanja","david"),cadence=40,new_time_axis=newtime_axis)
-    ind = np.argwhere(track2["time"]<endtime)[:,0]
-    times  = track2["time"].values[ind]
-    elong  = track2["elongation"].values[ind]
-    stds   = track2["std"].values[ind]
-    track2 = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
 
 
     # plt.plot(track["time"],track["elongation"],label="tanja")
