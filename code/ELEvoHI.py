@@ -64,6 +64,9 @@ def main():
     starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
     
     lead_time = None
+    ISSI = 0
+    L45 = 0
+    Ring = 0
     
     year = eventdate[:4]
     event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
@@ -107,11 +110,7 @@ def main():
     # plt.plot(track2["time"],track2["elongation"],label="david")
     # plt.legend()
     # plt.show()
-
-
-
-
-    
+ 
     # ELEvoHI ensemble
     # Define the range of values for each parameter to build the ensemble
     if do_ensemble:
@@ -168,87 +167,137 @@ def main():
     if not os.path.exists(pred_path):
         os.mkdir(pred_path)
     
-    L1_istime = config.get('L1_ist_obs', None)
-    if not L1_istime == None:
-        L1_istime = datetime.strptime(L1_istime, "%Y-%m-%d %H:%M")
-        lead_time = np.round((L1_istime - endtime).total_seconds()/3600., 2)
-    L1_isspeed = config.get('L1_isv_obs', np.nan)
+    if not ISSI:
     
-    STEREOA_istime = config.get('STEREOA_ist_obs', None)
-    if not STEREOA_istime == None:
-        STEREOA_istime = datetime.strptime(STEREOA_istime, "%Y-%m-%d %H:%M")       
-    STEREOA_isspeed = config.get('STEREOA_isv_obs', np.nan)
-    
-    STEREOB_istime = config.get('STEREOB_ist_obs', None)
-    if not STEREOB_istime == None:
-        STEREOB_istime = datetime.strptime(STEREOB_istime, "%Y-%m-%d %H:%M")
-    STEREOB_isspeed = config.get('STEREOB_isv_obs', np.nan)
-    
-    MES_istime = config.get('MESSENGER_ist_obs', None)
-    if not MES_istime == None:
-        MES_istime = datetime.strptime(MES_istime, "%Y-%m-%d %H:%M")
-    MES_isspeed = config.get('MESSENGER_isv_obs', np.nan)
-    
-    VEX_istime = config.get('VENUSEXPRESS_ist_obs', None)
-    if not VEX_istime == None:
-        VEX_istime = datetime.strptime(VEX_istime, "%Y-%m-%d %H:%M")
-    VEX_isspeed = config.get('VENUSEXPRESS_isv_obs', np.nan)
-    
-    BEPI_istime = config.get('BEPICOLOMBO_ist_obs', None)
-    if not BEPI_istime == None:
-        BEPI_istime = datetime.strptime(BEPI_istime, "%Y-%m-%d %H:%M")
-    BEPI_isspeed = config.get('BEPICOLOMBO_isv_obs', np.nan)
-    
-    SOLO_istime = config.get('SOLARORBITER_ist_obs', None)
-    if not SOLO_istime == None:
-        SOLO_istime = datetime.strptime(SOLO_istime, "%Y-%m-%d %H:%M")
-    SOLO_isspeed = config.get('SOLARORBITER_isv_obs', np.nan)
-    
-    PSP_istime = config.get('PARKERSOLARPROBE_ist_obs', None)
-    if not PSP_istime == None:
-        PSP_istime = datetime.strptime(PSP_istime, "%Y-%m-%d %H:%M")
-    PSP_isspeed = config.get('PARKERSOLARPROBE_isv_obs', np.nan)
-    
-    MERCURY_istime = config.get('MERCURY_ist_obs', None)
-    if not MERCURY_istime == None:
-        MERCURY_istime = datetime.strptime(MERCURY_istime, "%Y-%m-%d %H:%M")
-    MERCURY_isspeed = config.get('MERCURY_isv_obs', np.nan)
-    
-    VENUS_istime = config.get('VENUS_ist_obs', None)
-    if not VENUS_istime == None:
-        VENUS_istime = datetime.strptime(VENUS_istime, "%Y-%m-%d %H:%M")
-    VENUS_isspeed = config.get('VENUS_isv_obs', np.nan)
-    
-    EARTH_istime = config.get('EARTH_ist_obs', None)
-    if not EARTH_istime == None:
-        EARTH_istime = datetime.strptime(EARTH_istime, "%Y-%m-%d %H:%M")
-    EARTH_isspeed = config.get('EARTH_isv_obs', np.nan)
-    
-    MARS_istime = config.get('MARS_ist_obs', None)
-    if not MARS_istime == None:
-        MARS_istime = datetime.strptime(MARS_istime, "%Y-%m-%d %H:%M")
-    MARS_isspeed = config.get('MARS_isv_obs', np.nan)
+        L1_istime = config.get('L1_ist_obs', None)
+        if not L1_istime == None:
+            L1_istime = datetime.strptime(L1_istime, "%Y-%m-%d %H:%M")
+            lead_time = np.round((L1_istime - endtime).total_seconds()/3600., 2)
+        L1_isspeed = config.get('L1_isv_obs', np.nan)
+        
+        STEREOA_istime = config.get('STEREOA_ist_obs', None)
+        if not STEREOA_istime == None:
+            STEREOA_istime = datetime.strptime(STEREOA_istime, "%Y-%m-%d %H:%M")       
+        STEREOA_isspeed = config.get('STEREOA_isv_obs', np.nan)
+        
+        STEREOB_istime = config.get('STEREOB_ist_obs', None)
+        if not STEREOB_istime == None:
+            STEREOB_istime = datetime.strptime(STEREOB_istime, "%Y-%m-%d %H:%M")
+        STEREOB_isspeed = config.get('STEREOB_isv_obs', np.nan)
+        
+        MES_istime = config.get('MESSENGER_ist_obs', None)
+        if not MES_istime == None:
+            MES_istime = datetime.strptime(MES_istime, "%Y-%m-%d %H:%M")
+        MES_isspeed = config.get('MESSENGER_isv_obs', np.nan)
+        
+        VEX_istime = config.get('VENUSEXPRESS_ist_obs', None)
+        if not VEX_istime == None:
+            VEX_istime = datetime.strptime(VEX_istime, "%Y-%m-%d %H:%M")
+        VEX_isspeed = config.get('VENUSEXPRESS_isv_obs', np.nan)
+        
+        BEPI_istime = config.get('BEPICOLOMBO_ist_obs', None)
+        if not BEPI_istime == None:
+            BEPI_istime = datetime.strptime(BEPI_istime, "%Y-%m-%d %H:%M")
+        BEPI_isspeed = config.get('BEPICOLOMBO_isv_obs', np.nan)
+        
+        SOLO_istime = config.get('SOLARORBITER_ist_obs', None)
+        if not SOLO_istime == None:
+            SOLO_istime = datetime.strptime(SOLO_istime, "%Y-%m-%d %H:%M")
+        SOLO_isspeed = config.get('SOLARORBITER_isv_obs', np.nan)
+        
+        PSP_istime = config.get('PARKERSOLARPROBE_ist_obs', None)
+        if not PSP_istime == None:
+            PSP_istime = datetime.strptime(PSP_istime, "%Y-%m-%d %H:%M")
+        PSP_isspeed = config.get('PARKERSOLARPROBE_isv_obs', np.nan)
+        
+        MERCURY_istime = config.get('MERCURY_ist_obs', None)
+        if not MERCURY_istime == None:
+            MERCURY_istime = datetime.strptime(MERCURY_istime, "%Y-%m-%d %H:%M")
+        MERCURY_isspeed = config.get('MERCURY_isv_obs', np.nan)
+        
+        VENUS_istime = config.get('VENUS_ist_obs', None)
+        if not VENUS_istime == None:
+            VENUS_istime = datetime.strptime(VENUS_istime, "%Y-%m-%d %H:%M")
+        VENUS_isspeed = config.get('VENUS_isv_obs', np.nan)
+        
+        EARTH_istime = config.get('EARTH_ist_obs', None)
+        if not EARTH_istime == None:
+            EARTH_istime = datetime.strptime(EARTH_istime, "%Y-%m-%d %H:%M")
+        EARTH_isspeed = config.get('EARTH_isv_obs', np.nan)
+        
+        MARS_istime = config.get('MARS_ist_obs', None)
+        if not MARS_istime == None:
+            MARS_istime = datetime.strptime(MARS_istime, "%Y-%m-%d %H:%M")
+        MARS_isspeed = config.get('MARS_isv_obs', np.nan)
 
-    if outer_system:
-        JUPITER_istime = config.get('JUPITER_ist_obs', None)
-        if not JUPITER_istime == None:
-            JUPITER_istime = datetime.strptime(JUPITER_istime, "%Y-%m-%d %H:%M")
-        JUPITER_isspeed = config.get('JUPITER_isv_obs', np.nan)
+        if outer_system:
+            JUPITER_istime = config.get('JUPITER_ist_obs', None)
+            if not JUPITER_istime == None:
+                JUPITER_istime = datetime.strptime(JUPITER_istime, "%Y-%m-%d %H:%M")
+            JUPITER_isspeed = config.get('JUPITER_isv_obs', np.nan)
+            
+            SATURN_istime = config.get('SATURN_ist_obs', None)
+            if not SATURN_istime == None:
+                SATURN_istime = datetime.strptime(SATURN_istime, "%Y-%m-%d %H:%M")
+            SATURN_isspeed = config.get('SATURN_isv_obs', np.nan)
+            
+            URANUS_istime = config.get('URANUS_ist_obs', None)
+            if not URANUS_istime == None:
+                URANUS_istime = datetime.strptime(URANUS_istime, "%Y-%m-%d %H:%M")
+            URANUS_isspeed = config.get('URANUS_isv_obs', np.nan)
+            
+            NEPTUNE_istime = config.get('NEPTUNE_ist_obs', None)
+            if not NEPTUNE_istime == None:
+                NEPTUNE_istime = datetime.strptime(NEPTUNE_istime, "%Y-%m-%d %H:%M")
+            NEPTUNE_isspeed = config.get('NEPTUNE_isv_obs', np.nan)
         
-        SATURN_istime = config.get('SATURN_ist_obs', None)
-        if not SATURN_istime == None:
-            SATURN_istime = datetime.strptime(SATURN_istime, "%Y-%m-%d %H:%M")
-        SATURN_isspeed = config.get('SATURN_isv_obs', np.nan)
+    if ISSI:  
+        if L45:           
+            L1_istime = config.get('L1_ist_obs', None)
+            if not L1_istime == None:
+                L1_istime = datetime.strptime(L1_istime, "%Y-%m-%d %H:%M")
+            L1_isspeed = config.get('L1_isv_obs', np.nan)
+            
+            L5_istime = config.get('L5_ist_obs', None)
+            if not L5_istime == None:
+                L5_istime = datetime.strptime(L5_istime, "%Y-%m-%d %H:%M")
+            L5_isspeed = config.get('L5_isv_obs', np.nan)
+            
+            L4_istime = config.get('L4_ist_obs', None)
+            if not L4_istime == None:
+                L4_istime = datetime.strptime(L4_istime, "%Y-%m-%d %H:%M")
+            L4_isspeed = config.get('L4_isv_obs', np.nan)
         
-        URANUS_istime = config.get('URANUS_ist_obs', None)
-        if not URANUS_istime == None:
-            URANUS_istime = datetime.strptime(URANUS_istime, "%Y-%m-%d %H:%M")
-        URANUS_isspeed = config.get('URANUS_isv_obs', np.nan)
-        
-        NEPTUNE_istime = config.get('NEPTUNE_ist_obs', None)
-        if not NEPTUNE_istime == None:
-            NEPTUNE_istime = datetime.strptime(NEPTUNE_istime, "%Y-%m-%d %H:%M")
-        NEPTUNE_isspeed = config.get('NEPTUNE_isv_obs', np.nan)
+        if Ring:         
+            R1_istime = config.get('R1_ist_obs', None)
+            if not R1_istime == None:
+                R1_istime = datetime.strptime(R1_istime, "%Y-%m-%d %H:%M")
+            R1_isspeed = config.get('R1_isv_obs', np.nan)
+            
+            R2_istime = config.get('R2_ist_obs', None)
+            if not R2_istime == None:
+                R2_istime = datetime.strptime(R2_istime, "%Y-%m-%d %H:%M")
+            R2_isspeed = config.get('R2_isv_obs', np.nan)
+            
+            R3_istime = config.get('R3_ist_obs', None)
+            if not R3_istime == None:
+                R3_istime = datetime.strptime(R3_istime, "%Y-%m-%d %H:%M")
+            R3_isspeed = config.get('R3_isv_obs', np.nan)
+            
+            R4_istime = config.get('R4_ist_obs', None)
+            if not R4_istime == None:
+                R4_istime = datetime.strptime(R4_istime, "%Y-%m-%d %H:%M")
+            R4_isspeed = config.get('R4_isv_obs', np.nan)
+            
+            R5_istime = config.get('R5_ist_obs', None)
+            if not R5_istime == None:
+                R5_istime = datetime.strptime(R5_istime, "%Y-%m-%d %H:%M")
+            R5_isspeed = config.get('R5_isv_obs', np.nan)
+            
+            R6_istime = config.get('R6_ist_obs', None)
+            if not R6_istime == None:
+                R6_istime = datetime.strptime(R6_istime, "%Y-%m-%d %H:%M")
+            R6_isspeed = config.get('R6_isv_obs', np.nan)
     
 
     # copy config file to prediction folder to save it as run-reference
@@ -280,293 +329,396 @@ def main():
         
     #####################################################################
     # get s/c and planet positions
-
-    #STEREO Ahead
-    start_date = datetime(2006, 10, 26, 0, 2)
     
-    logging.getLogger('sunpy.coordinates').setLevel(logging.WARNING)
-
-    if start_date < thi:
-        coord = get_horizons_coord('STEREO-A', thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-        sta_time = sc_hee.obstime.to_datetime()
-        sta_r = sc_heeq.radius.value
-        sta_lon = np.deg2rad(sc_hee.lon.value)
-        sta_lat = np.deg2rad(sc_hee.lat.value)
-        sta_available = 1    
-    else: sta_available = 0
-
-    # Parker Solar Probe
-    start_date = datetime(2018, 8, 12, 9, 0)
-
-    if start_date < thi:
-        coord = get_horizons_coord('Parker Solar Probe', thi)  
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+    if ISSI:
         
-        psp_time = sc_hee.obstime.to_datetime()
-        psp_r = sc_heeq.radius.value
-        psp_lon = np.deg2rad(sc_hee.lon.value)
-        psp_lat = np.deg2rad(sc_hee.lat.value)
-        psp_available = 1
-    else: psp_available = 0
-        
-    # Solar Orbiter    
-    start_date = datetime(2020, 2, 10, 5, 0)
+        if L45:
+            L5_r = 1.
+            L5_lon = -60.52656445
+            L5_lat = -7.11695757
+            L5_available = 1
+            
+            L4_r = 1.
+            L4_lon = 59.41944299
+            L4_lat = 2.34933041
+            L4_available = 1
 
-    if start_date < thi:
-        coord = get_horizons_coord('Solar Orbiter', thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-        solo_time = sc_hee.obstime.to_datetime()
-        solo_r = sc_heeq.radius.value
-        solo_lon = np.deg2rad(sc_hee.lon.value)
-        solo_lat = np.deg2rad(sc_hee.lat.value)
-        solo_available = 1
-    else: solo_available = 0
+            L1_r = 1.
+            L1_lon = -0.21187834
+            L1_lat = -4.75545600
+            L1_available = 1
+        else:
+            L5_available = 0
+            L4_available = 0
+            L1_available = 0
 
-    # BepiColombo
-    start_date = datetime(2018, 10, 20, 3, 0)
+        if Ring:         
+            R1_r = 1.
+            R1_lon = -0.21187834
+            R1_lat = -4.75545600
+            R1_available = 1
 
-    if start_date < thi:
-
-        coord = get_horizons_coord('BepiColombo', thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-        bepi_time = sc_hee.obstime.to_datetime()
-        bepi_r = sc_heeq.radius.value
-        bepi_lon = np.deg2rad(sc_hee.lon.value)
-        bepi_lat = np.deg2rad(sc_hee.lat.value)
-        bepi_available = 1
-    else: bepi_available = 0
-        
-    # STEREO Behind
-    start_date = datetime(2006, 10, 26, 2, 0)
-    end_date = datetime(2014, 9, 30, 23, 0)
-
-    if start_date < thi < end_date:
-        coord = get_horizons_coord('STEREO-B', thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-        stb_time = sc_hee.obstime.to_datetime()
-        stb_r = sc_heeq.radius.value
-        stb_lon = np.deg2rad(sc_hee.lon.value)
-        stb_lat = np.deg2rad(sc_hee.lat.value)
-        stb_available = 1
-    else: stb_available = 0
-        
-    # Venus Express
-    start_date = datetime(2005, 11, 9, 6, 0)
-    end_date = datetime(2014, 12, 31, 23, 0)
-
-    if start_date < thi < end_date:
-        coord = get_horizons_coord('Venus Express', thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-        vex_time = sc_hee.obstime.to_datetime()
-        vex_r = sc_heeq.radius.value
-        vex_lon = np.deg2rad(sc_hee.lon.value)
-        vex_lat = np.deg2rad(sc_hee.lat.value)
-        vex_available = 1
-    else: vex_available = 0
-        
-    # Messenger
-    start_date = datetime(2004, 8, 3, 8, 0)
-    end_date = datetime(2015, 5, 1, 18, 0)
-
-    if start_date < thi < end_date:
-        coord = get_horizons_coord('Messenger', thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-        mes_time = sc_hee.obstime.to_datetime()
-        mes_r = sc_heeq.radius.value
-        mes_lon = np.deg2rad(sc_hee.lon.value)
-        mes_lat = np.deg2rad(sc_hee.lat.value)
-        mes_available = 1
-    else: mes_available = 0
-
-    # Mercury
-    coord = get_horizons_coord(199, thi)
-    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-    mercury_time = sc_hee.obstime.to_datetime()
-    mercury_r = sc_heeq.radius.value
-    mercury_lon = np.deg2rad(sc_hee.lon.value)
-    mercury_lat = np.deg2rad(sc_hee.lat.value)
-
-    # Venus
-    coord = get_horizons_coord(299, thi)
-    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-    venus_time = sc_hee.obstime.to_datetime()
-    venus_r = sc_heeq.radius.value
-    venus_lon = np.deg2rad(sc_hee.lon.value)
-    venus_lat = np.deg2rad(sc_hee.lat.value)
-
-    # L1
-    coord = get_horizons_coord('EM-L1', thi)
-    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-    L1_time = sc_hee.obstime.to_datetime()
-    L1_r = sc_heeq.radius.value
-    L1_lon = np.deg2rad(sc_hee.lon.value)
-    L1_lat = np.deg2rad(sc_hee.lat.value)
-
-    # Earth
-    coord = get_horizons_coord(399, thi)
-    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-    earth_time = sc_hee.obstime.to_datetime()
-    earth_r = sc_heeq.radius.value
-    earth_lon = np.deg2rad(sc_hee.lon.value)
-    earth_lat = np.deg2rad(sc_hee.lat.value)
-
-    # Mars
-    coord = get_horizons_coord(499, thi)
-    sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-    sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-        
-    mars_time = sc_hee.obstime.to_datetime()
-    mars_r = sc_heeq.radius.value
-    mars_lon = np.deg2rad(sc_hee.lon.value)
-    mars_lat = np.deg2rad(sc_hee.lat.value)
-
-    if outer_system == 1:
-        # Jupiter
-        coord = get_horizons_coord(599, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-        jupiter_time = sc_hee.obstime.to_datetime()
-        jupiter_r = sc_heeq.radius.value
-        jupiter_lon = np.deg2rad(sc_hee.lon.value)
-        jupiter_lat = np.deg2rad(sc_hee.lat.value)
-
-        # Saturn
-        coord = get_horizons_coord(699, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-        saturn_time = sc_hee.obstime.to_datetime()
-        saturn_r = sc_heeq.radius.value
-        saturn_lon = np.deg2rad(sc_hee.lon.value)
-        saturn_lat = np.deg2rad(sc_hee.lat.value)
-
-        # Uranus
-        coord = get_horizons_coord(799, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-        uranus_time = sc_hee.obstime.to_datetime()
-        uranus_r = sc_heeq.radius.value
-        uranus_lon = np.deg2rad(sc_hee.lon.value)
-        uranus_lat = np.deg2rad(sc_hee.lat.value)
-
-        # Neptune
-        coord = get_horizons_coord(899, thi)
-        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
-        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
-
-        neptune_time = sc_hee.obstime.to_datetime()
-        neptune_r = sc_heeq.radius.value
-        neptune_lon = np.deg2rad(sc_hee.lon.value)
-        neptune_lat = np.deg2rad(sc_hee.lat.value)
-        
-    availability = {
-        'sta_available': sta_available,
-        'stb_available': stb_available,
-        'mes_available': mes_available,
-        'vex_available': vex_available,
-        'solo_available': solo_available,
-        'psp_available': psp_available,
-        'bepi_available': bepi_available
-    }
+            R2_r = 1.
+            R2_lon = 19.71414499
+            R2_lat = -2.59890578
+            R2_available = 1
+            
+            R3_r = 1.
+            R3_lon = 119.47343555
+            R3_lat = 7.11695757
+            R3_available = 1
+            
+            R4_r = 1.
+            R4_lon = 139.63131949
+            R4_lat = 7.16339432
+            R4_available = 1
+            
+            R5_r = 1.
+            R5_lon = -120.58055701
+            R5_lat = -2.34933041
+            R5_available = 1
+            
+            R6_r = 1.
+            R6_lon = -100.66445789
+            R6_lat = -4.55151774
+            R6_available = 1
+        else:
+            R1_available = 0
+            R2_available = 0
+            R3_available = 0
+            R4_available = 0
+            R5_available = 0
+            R6_available = 0
     
-    positions = {
-        'L1_lon': L1_lon,
-        'mercury_lon': mercury_lon,
-        'venus_lon': venus_lon,
-        'earth_lon': earth_lon,
-        'mars_lon': mars_lon,
-        'L1_r': L1_r,
-        'mercury_r': mercury_r,
-        'venus_r': venus_r,
-        'earth_r': earth_r,
-        'mars_r': mars_r,
+    if not ISSI:
+        #STEREO Ahead
+        start_date = datetime(2006, 10, 26, 0, 2)
+        
+        logging.getLogger('sunpy.coordinates').setLevel(logging.WARNING)
 
-    }
-    
-    if stb_available:
-        # New entry as a dictionary
-        add_stb = {'stb_lon': stb_lon,
-            'stb_r': stb_r
+        if start_date < thi:
+            coord = get_horizons_coord('STEREO-A', thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+            sta_time = sc_hee.obstime.to_datetime()
+            sta_r = sc_heeq.radius.value
+            sta_lon = np.deg2rad(sc_hee.lon.value)
+            sta_lat = np.deg2rad(sc_hee.lat.value)
+            sta_available = 1    
+        else: sta_available = 0
+        
+        pdb.set_trace()
+        
+        # Parker Solar Probe
+        start_date = datetime(2018, 8, 12, 9, 0)
+
+        if start_date < thi:
+            coord = get_horizons_coord('Parker Solar Probe', thi)  
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+            psp_time = sc_hee.obstime.to_datetime()
+            psp_r = sc_heeq.radius.value
+            psp_lon = np.deg2rad(sc_hee.lon.value)
+            psp_lat = np.deg2rad(sc_hee.lat.value)
+            psp_available = 1
+        else: psp_available = 0
+            
+        # Solar Orbiter    
+        start_date = datetime(2020, 2, 10, 5, 0)
+
+        if start_date < thi:
+            coord = get_horizons_coord('Solar Orbiter', thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+            solo_time = sc_hee.obstime.to_datetime()
+            solo_r = sc_heeq.radius.value
+            solo_lon = np.deg2rad(sc_hee.lon.value)
+            solo_lat = np.deg2rad(sc_hee.lat.value)
+            solo_available = 1
+        else: solo_available = 0
+
+        # BepiColombo
+        start_date = datetime(2018, 10, 20, 3, 0)
+
+        if start_date < thi:
+
+            coord = get_horizons_coord('BepiColombo', thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+            bepi_time = sc_hee.obstime.to_datetime()
+            bepi_r = sc_heeq.radius.value
+            bepi_lon = np.deg2rad(sc_hee.lon.value)
+            bepi_lat = np.deg2rad(sc_hee.lat.value)
+            bepi_available = 1
+        else: bepi_available = 0
+            
+        # STEREO Behind
+        start_date = datetime(2006, 10, 26, 2, 0)
+        end_date = datetime(2014, 9, 30, 23, 0)
+
+        if start_date < thi < end_date:
+            coord = get_horizons_coord('STEREO-B', thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+            stb_time = sc_hee.obstime.to_datetime()
+            stb_r = sc_heeq.radius.value
+            stb_lon = np.deg2rad(sc_hee.lon.value)
+            stb_lat = np.deg2rad(sc_hee.lat.value)
+            stb_available = 1
+        else: stb_available = 0
+            
+        # Venus Express
+        start_date = datetime(2005, 11, 9, 6, 0)
+        end_date = datetime(2014, 12, 31, 23, 0)
+
+        if start_date < thi < end_date:
+            coord = get_horizons_coord('Venus Express', thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+            vex_time = sc_hee.obstime.to_datetime()
+            vex_r = sc_heeq.radius.value
+            vex_lon = np.deg2rad(sc_hee.lon.value)
+            vex_lat = np.deg2rad(sc_hee.lat.value)
+            vex_available = 1
+        else: vex_available = 0
+            
+        # Messenger
+        start_date = datetime(2004, 8, 3, 8, 0)
+        end_date = datetime(2015, 5, 1, 18, 0)
+
+        if start_date < thi < end_date:
+            coord = get_horizons_coord('Messenger', thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+            mes_time = sc_hee.obstime.to_datetime()
+            mes_r = sc_heeq.radius.value
+            mes_lon = np.deg2rad(sc_hee.lon.value)
+            mes_lat = np.deg2rad(sc_hee.lat.value)
+            mes_available = 1
+        else: mes_available = 0
+
+        # Mercury
+        coord = get_horizons_coord(199, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+        mercury_time = sc_hee.obstime.to_datetime()
+        mercury_r = sc_heeq.radius.value
+        mercury_lon = np.deg2rad(sc_hee.lon.value)
+        mercury_lat = np.deg2rad(sc_hee.lat.value)
+
+        # Venus
+        coord = get_horizons_coord(299, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+        venus_time = sc_hee.obstime.to_datetime()
+        venus_r = sc_heeq.radius.value
+        venus_lon = np.deg2rad(sc_hee.lon.value)
+        venus_lat = np.deg2rad(sc_hee.lat.value)
+
+        # L1
+        coord = get_horizons_coord('EM-L1', thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+        L1_time = sc_hee.obstime.to_datetime()
+        L1_r = sc_heeq.radius.value
+        L1_lon = np.deg2rad(sc_hee.lon.value)
+        L1_lat = np.deg2rad(sc_hee.lat.value)
+
+        # Earth
+        coord = get_horizons_coord(399, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+        earth_time = sc_hee.obstime.to_datetime()
+        earth_r = sc_heeq.radius.value
+        earth_lon = np.deg2rad(sc_hee.lon.value)
+        earth_lat = np.deg2rad(sc_hee.lat.value)
+
+        # Mars
+        coord = get_horizons_coord(499, thi)
+        sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+        sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+            
+        mars_time = sc_hee.obstime.to_datetime()
+        mars_r = sc_heeq.radius.value
+        mars_lon = np.deg2rad(sc_hee.lon.value)
+        mars_lat = np.deg2rad(sc_hee.lat.value)
+
+        if outer_system == 1:
+            # Jupiter
+            coord = get_horizons_coord(599, thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+            jupiter_time = sc_hee.obstime.to_datetime()
+            jupiter_r = sc_heeq.radius.value
+            jupiter_lon = np.deg2rad(sc_hee.lon.value)
+            jupiter_lat = np.deg2rad(sc_hee.lat.value)
+
+            # Saturn
+            coord = get_horizons_coord(699, thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+            saturn_time = sc_hee.obstime.to_datetime()
+            saturn_r = sc_heeq.radius.value
+            saturn_lon = np.deg2rad(sc_hee.lon.value)
+            saturn_lat = np.deg2rad(sc_hee.lat.value)
+
+            # Uranus
+            coord = get_horizons_coord(799, thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+            uranus_time = sc_hee.obstime.to_datetime()
+            uranus_r = sc_heeq.radius.value
+            uranus_lon = np.deg2rad(sc_hee.lon.value)
+            uranus_lat = np.deg2rad(sc_hee.lat.value)
+
+            # Neptune
+            coord = get_horizons_coord(899, thi)
+            sc_hee = coord.transform_to(frames.HeliocentricEarthEcliptic)  #HEE
+            sc_heeq = coord.transform_to(frames.HeliographicStonyhurst) #HEEQ
+
+            neptune_time = sc_hee.obstime.to_datetime()
+            neptune_r = sc_heeq.radius.value
+            neptune_lon = np.deg2rad(sc_hee.lon.value)
+            neptune_lat = np.deg2rad(sc_hee.lat.value)
+            
+        availability = {
+            'sta_available': sta_available,
+            'stb_available': stb_available,
+            'mes_available': mes_available,
+            'vex_available': vex_available,
+            'solo_available': solo_available,
+            'psp_available': psp_available,
+            'bepi_available': bepi_available
         }
-        # Adding the new entry using update()
-        positions.update(add_stb)
-    if sta_available:
-        # New entry as a dictionary
-        add_sta = {'sta_lon': sta_lon,
-            'sta_r': sta_r
+        
+        positions = {
+            'L1_lon': L1_lon,
+            'mercury_lon': mercury_lon,
+            'venus_lon': venus_lon,
+            'earth_lon': earth_lon,
+            'mars_lon': mars_lon,
+            'L1_r': L1_r,
+            'mercury_r': mercury_r,
+            'venus_r': venus_r,
+            'earth_r': earth_r,
+            'mars_r': mars_r,
+
         }
-        # Adding the new entry using update()
-        positions.update(add_sta)
-    if mes_available:
-        # New entry as a dictionary
-        add_mes = {'mes_lon': mes_lon,
-            'mes_r': mes_r
-        }
-        # Adding the new entry using update()
-        positions.update(add_mes)
-    if vex_available:
-        # New entry as a dictionary
-        add_vex = {'vex_lon': vex_lon,
-            'vex_r': vex_r
-        }
-        # Adding the new entry using update()
-        positions.update(add_vex) 
-    if solo_available:
-        # New entry as a dictionary
-        add_solo = {'solo_lon': solo_lon,
-            'solo_r': solo_r
-        }
-        # Adding the new entry using update()
-        positions.update(add_solo)
-    if psp_available:
-        # New entry as a dictionary
-        add_psp = {'psp_lon': psp_lon,
-            'psp_r': psp_r
-        }
-        # Adding the new entry using update()
-        positions.update(add_psp)  
-    if bepi_available:
-        # New entry as a dictionary
-        add_bepi = {'bepi_lon': bepi_lon,
-            'bepi_r': bepi_r
-        }
-        # Adding the new entry using update()
-        positions.update(add_bepi)
-    if outer_system:
-        outer_planets = {'jupiter_r': jupiter_r,
-                        'saturn_r': saturn_r,
-                        'uranus_r': uranus_r,
-                        'neptune_r': neptune_r,
-                        'jupiter_lon': jupiter_lon,
-                        'saturn_lon': saturn_lon,
-                        'uranus_lon': uranus_lon,
-                        'neptune_lon': neptune_lon
-        }
-        positions.update(outer_planets)
+        
+        if ISSI:
+            if L45:
+                availability = {
+                    'L1_available': L1_available,
+                    'L4_available': L4_available,
+                    'L5_available': L5_available
+                }
+                positions = {
+                    'L1_lon': L1_lon,
+                    'L4_lon': mercury_lon,
+                    'L5_lon': venus_lon,
+                    'L1_r': L1_r,
+                    'L4_r': L4_r,
+                    'L5_r': L5_r
+                }
+            if Ring:
+                availability = {                
+                    'R1_available': R1_available,
+                    'R2_available': R2_available,
+                    'R3_available': R3_available,
+                    'R4_available': R4_available,
+                    'R5_available': R5_available,
+                    'R6_available': R6_available
+                }       
+                positions = {
+                    'R1_lon': earth_lon,
+                    'R2_lon': mars_lon,
+                    'R3_lon': R3_lon,
+                    'R4_lon': R4_lon,
+                    'R5_lon': R5_lon,
+                    'R6_lon': R6_lon,
+                    'R1_r': R1_r,
+                    'R2_r': R2_r,
+                    'R3_r': R3_r,
+                    'R4_r': R4_r,
+                    'R5_r': R5_r,
+                    'R6_r': R6_r
+                }
+        
+        if not ISSI:       
+            if stb_available:
+                # New entry as a dictionary
+                add_stb = {'stb_lon': stb_lon,
+                    'stb_r': stb_r
+                }
+                # Adding the new entry using update()
+                positions.update(add_stb)
+            if sta_available:
+                # New entry as a dictionary
+                add_sta = {'sta_lon': sta_lon,
+                    'sta_r': sta_r
+                }
+                # Adding the new entry using update()
+                positions.update(add_sta)
+            if mes_available:
+                # New entry as a dictionary
+                add_mes = {'mes_lon': mes_lon,
+                    'mes_r': mes_r
+                }
+                # Adding the new entry using update()
+                positions.update(add_mes)
+            if vex_available:
+                # New entry as a dictionary
+                add_vex = {'vex_lon': vex_lon,
+                    'vex_r': vex_r
+                }
+                # Adding the new entry using update()
+                positions.update(add_vex) 
+            if solo_available:
+                # New entry as a dictionary
+                add_solo = {'solo_lon': solo_lon,
+                    'solo_r': solo_r
+                }
+                # Adding the new entry using update()
+                positions.update(add_solo)
+            if psp_available:
+                # New entry as a dictionary
+                add_psp = {'psp_lon': psp_lon,
+                    'psp_r': psp_r
+                }
+                # Adding the new entry using update()
+                positions.update(add_psp)  
+            if bepi_available:
+                # New entry as a dictionary
+                add_bepi = {'bepi_lon': bepi_lon,
+                    'bepi_r': bepi_r
+                }
+                # Adding the new entry using update()
+                positions.update(add_bepi)
+            if outer_system:
+                outer_planets = {'jupiter_r': jupiter_r,
+                                'saturn_r': saturn_r,
+                                'uranus_r': uranus_r,
+                                'neptune_r': neptune_r,
+                                'jupiter_lon': jupiter_lon,
+                                'saturn_lon': saturn_lon,
+                                'uranus_lon': uranus_lon,
+                                'neptune_lon': neptune_lon
+                }
+                positions.update(outer_planets)
                 
         ############################################################################   
         # calculate angular separation of CME apex from each target
