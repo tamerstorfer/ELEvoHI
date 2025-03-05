@@ -26,6 +26,13 @@ import time as ti
 
 from functions import load_config,  merge_tracks,  fpf, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble
 
+# to do:
+# if no start and endtimes are given, use the whole track
+# either get rid of start and endcut or use times to fill in values
+# add prediction lead time
+# give results of deterministic run and asymetric errors
+# make ensemble movie
+
 def main():
     
     plt.clf()
@@ -49,8 +56,6 @@ def main():
     phi_manual = config['phi_manual'][0]
     f = config['f'][0]
     halfwidth = config['halfwidth'][0]
-    startcut = config['startcut']
-    endcut = config['endcut']
     outer_system = config['outer_system']
     movie = config['movie']
     silent = config['silent']
@@ -58,10 +63,12 @@ def main():
     endtime = datetime.strptime(config['endtime'], "%Y-%m-%d %H:%M")
     starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
     
+    lead_time = None
+    
     year = eventdate[:4]
-    #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
+    event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
-    event_path = '../../' + eventdate + '/'
+    #event_path = '../../' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
 
     # logging runnumbers for which no DBMfit converges
@@ -76,8 +83,9 @@ def main():
     # includes standard deviation and saves a figure to the predictions folder
     newtime_axis = pd.date_range(start=starttime, end=endtime, freq=str(40)+"min")
 
+    #pdb.set_trace()
 
-    # track = merge_tracks(event_path, prediction_path,cadence=10,new_time_axis=newtime_axis)
+    track = merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=newtime_axis)
     # ind = np.argwhere(track["time"]<endtime)[:,0]
     # times = track["time"].values[ind]
     # elong = track["elongation"].values[ind]
@@ -85,13 +93,15 @@ def main():
     # track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
 
 
-    track = merge_tracks(event_path.replace("tanja","david"), prediction_path.replace("tanja","david"),cadence=40,new_time_axis=newtime_axis)
+    #track = merge_tracks(event_path.replace("tanja", "david"), prediction_path.replace("tanja", "david"), cadence=40, new_time_axis=newtime_axis)
     ind = np.argwhere(track["time"]<endtime)[:,0]
     times  = track["time"].values[ind]
     elong  = track["elongation"].values[ind]
     stds   = track["std"].values[ind]
     track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
-
+    
+    startcut = track["time"].searchsorted(starttime)
+    endcut = track["time"].searchsorted(endtime) - 1
 
     # plt.plot(track["time"],track["elongation"],label="tanja")
     # plt.plot(track2["time"],track2["elongation"],label="david")
@@ -161,6 +171,7 @@ def main():
     L1_istime = config.get('L1_ist_obs', None)
     if not L1_istime == None:
         L1_istime = datetime.strptime(L1_istime, "%Y-%m-%d %H:%M")
+        lead_time = np.round((L1_istime - endtime).total_seconds()/3600., 2)
     L1_isspeed = config.get('L1_isv_obs', np.nan)
     
     STEREOA_istime = config.get('STEREOA_ist_obs', None)
@@ -770,9 +781,6 @@ def main():
                 hit_stb = 0
         else:
             hit_stb = 0
-            
-        #if runnumber == 137:
-        #    pdb.set_trace()
 
         if vex_available == 1:
             if silent == 0:
@@ -882,6 +890,7 @@ def main():
                 hit_neptune = 1
             else:
                 hit_neptune = 0
+                
             outer_hits = {
                 'hit_jupiter': hit_jupiter,
                 'hit_saturn': hit_saturn,
@@ -892,7 +901,7 @@ def main():
         if not do_ensemble:
             det_plot = True
         else:   
-            if round(np.rad2deg(det_run[0])) == round(np.rad2deg(phi)) and round(det_run[1]) == round(f, 1) and round(np.rad2deg(det_run[2])) == round(np.rad2deg(halfwidth)) :
+            if round(np.rad2deg(det_run[0])) == round(np.rad2deg(phi)) and round(det_run[1], 1) == round(f, 1) and round(np.rad2deg(det_run[2])) == round(np.rad2deg(halfwidth)):
                 det_plot = True
                 print('det_run set to True in ensemble!')
                 det_run_no = runnumber
@@ -1098,6 +1107,11 @@ def main():
             tmp_ensemble['arrival speed [km/s]'] = prediction['arrival speed [km/s]']
             tmp_ensemble['dt [h]'] = prediction['dt [h]']
             tmp_ensemble['dv [km/s]'] = prediction['dv [km/s]']
+            
+            if lead_time:
+                tmp_ensemble['prediction lead time [h]'] = lead_time
+            else:
+                tmp_ensemble['prediction lead time [h]'] = None
                 
             ensemble = pd.concat([ensemble, tmp_ensemble])
 
@@ -1111,6 +1125,45 @@ def main():
     txt_file = prediction_path + 'notes.txt'
     if os.path.exists(txt_file):
         os.remove(txt_file)
+        
+    if no_det_run:
+        with open(txt_file, 'a') as file:
+            # Write the value to the file
+            file.write('Run number of deterministic run:' + '\n')
+            file.write(str(det_run_no) +  '\n')
+            file.write('No fit possible for deterministic run!' + '\n')
+            file.write('No DBMfit for runnumbers:' + '\n')
+            file.write(str(nofit))
+    else:
+        #det_run_count = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values
+
+        filtered_ensemble = ensemble[(ensemble['run no.'] == det_run_no) & (ensemble['target'] == 'L1')]
+        det_run_count = filtered_ensemble['dt [h]'].values
+    
+    #pdb.set_trace()
+
+    if np.isnan(det_run_count): 
+        with open(txt_file, 'a') as file:
+            file.write('Deterministic run did not hit L1!' + '\n')  
+            file.write('No DBMfit for runnumbers:' + '\n')
+            file.write(str(nofit))           
+    else:               
+        #det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[idx]
+        #det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[idx]  
+        det_run_dv = filtered_ensemble['dv [km/s]'].values
+        det_run_dt = det_run_count
+
+        # Open the file in write mode ('w')
+        with open(txt_file, 'a') as file:
+            # Write the value to the file
+            file.write('Run number of deterministic run:' + '\n')
+            file.write(str(det_run_no) +  '\n')
+            file.write('Difference in arrival time:' + '\n')
+            file.write(str(det_run_dt) +  '\n')
+            file.write('Difference in arrival speed:' + '\n')
+            file.write(str(det_run_dv) +  '\n')
+            file.write('No DBMfit for runnumbers:' + '\n')
+            file.write(str(nofit))
     
     if ensemble.empty:
         with open(txt_file, 'a') as file:
@@ -1152,48 +1205,15 @@ def main():
                     print('       ', ensemble_results['target'].iloc[i])
                     print('       --------')
                     print('        Arrival Probability: ', ensemble_results['likelihood [%]'].iloc[i], '%')
+                    if lead_time is not None and target_names[i] == 'L1':
+                        print('        Prediction Lead Time: ', lead_time, 'hours')
+                    print('        Deterministic Arrival Time [UT]: ', ensemble_results['arrival time (det) [UT]'].iloc[i], '+/-', ensemble_results['arrival time (std dev) [h]'].iloc[i], ' hours')
                     print('        Mean Arrival Time [UT]: ', ensemble_results['arrival time (mean) [UT]'].iloc[i], '+/-', ensemble_results['arrival time (std dev) [h]'].iloc[i], ' hours')
-                    print('        Mean Arrival Speed [km/s]: ', ensemble_results['arrival speed (mean) [km/s]'].iloc[i], '+/-', ensemble_results['arrival speed (std dev) [km/s]'].iloc[i], 'km/s')
+                    print('        Median Arrival Time [UT]: ', ensemble_results['arrival time (median) [UT]'].iloc[i], '+/-', ensemble_results['arrival time (std dev) [h]'].iloc[i], ' hours')
+                    print('        Mean Arrival Speed: ', ensemble_results['arrival speed (mean) [km/s]'].iloc[i], '+/-', ensemble_results['arrival speed (std dev) [km/s]'].iloc[i], 'km/s')
                     print('       --------')
                 print('Ensemble size: ', num_points_phi * num_points_f * num_points_lambda)
                 print('Deterministic run ist run number', det_run_no)
-
-            if no_det_run:
-                with open(txt_file, 'a') as file:
-                    # Write the value to the file
-                    file.write('Run number of deterministic run:' + '\n')
-                    file.write(str(det_run_no) +  '\n')
-                    file.write('No fit possible for deterministic run!' + '\n')
-                    file.write('No DBMfit for runnumbers:' + '\n')
-                    file.write(str(nofit))
-            else:
-                #det_run_count = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values
-
-                filtered_ensemble = ensemble[(ensemble['run no.'] == det_run_no) & (ensemble['target'] == 'L1')]
-                det_run_count = filtered_ensemble['dt [h]'].values
-
-                if np.isnan(det_run_count): 
-                    with open(txt_file, 'a') as file:
-                        file.write('Deterministic run did not hit L1!' + '\n')  
-                        file.write('No DBMfit for runnumbers:' + '\n')
-                        file.write(str(nofit))           
-                else:               
-                    #det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[idx]
-                    #det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[idx]  
-                    det_run_dv = filtered_ensemble['dv [km/s]'].values
-                    det_run_dt = det_run_count
-
-                    # Open the file in write mode ('w')
-                    with open(txt_file, 'a') as file:
-                        # Write the value to the file
-                        file.write('Run number of deterministic run:' + '\n')
-                        file.write(str(det_run_no) +  '\n')
-                        file.write('Difference in arrival time:' + '\n')
-                        file.write(str(det_run_dt) +  '\n')
-                        file.write('Difference in arrival speed:' + '\n')
-                        file.write(str(det_run_dv) +  '\n')
-                        file.write('No DBMfit for runnumbers:' + '\n')
-                        file.write(str(nofit))
         
     # Record the end time of ELEvoHI
     e_ti = ti.time()
@@ -1201,7 +1221,7 @@ def main():
     elapsed_time = round((e_ti - s_ti)/60., 2)
     print(' ')
     print('--------------------------------------') 
-    
+     
     print("ELEvoHI needed", elapsed_time, "minutes.")
     #print(np.rad2deg(det_run[0]), det_run[1], np.rad2deg(det_run[2]))
     #pdb.set_trace()

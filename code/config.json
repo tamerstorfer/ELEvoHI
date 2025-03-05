@@ -1,9 +1,9 @@
 {
     "basic_path": "../../",
-    "eventdate": "20201207_tanja",
+    "eventdate": "20201207",
     "HIobs": "A",
     "mode": "science",
-    "do_ensemble": false,
+    "do_ensemble": true,
     "phi_FPF": false,
     "phi_FPF_range": [
     10,
@@ -27,10 +27,8 @@
     62
     ],
     "halfwidth_step": 5,
-    "startcut": 0,
-    "endcut": 30,
     "starttime":"2020-12-07 18:43",
-    "endtime":"2020-12-09 11:00",
+    "endtime":"2020-12-09 12:00",
     "outer_system": false,
     "movie": false,
     "silent": true,

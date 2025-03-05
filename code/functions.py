@@ -35,22 +35,19 @@ def calculate_new_time_axis(start_time, end_time, cadence):
     timerange =  pd.date_range(start=start_time, end=end_time+timedelta(minutes=cadence//4), freq=str(cadence)+"min")
     return timerange
 
-def merge_tracks(event_path, prediction_path,cadence=40,new_time_axis=None):
+def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
     
     if not os.path.exists(prediction_path):
         os.mkdir(prediction_path)
     
     # Set Seaborn's color palette to a colorblind-friendly palette
     sns.set_palette("colorblind")
-
-    
+ 
     plt.figure(figsize=(10, 6), facecolor='white')
 
     # List all files in the folder with .csv ending
     files = [file for file in os.listdir(event_path) if file.endswith('.csv')]
     
-    
-
     # Calculate common new time axis
     all_time_data = []
     for file in files:
@@ -336,20 +333,19 @@ def ELCon(elon, d, phi, hwidth, f):
         
     return R_ell
 
-def fitdbm(x, gamma,vinit,swspeed,rinit):
+def fitdbm(x, gamma, vinit, swspeed, rinit):
     """ function to fit time-distance profile of CME """   
     fit = (1/gamma) * np.log(1 + gamma*(vinit - swspeed) * x) + swspeed*x + rinit
     
     return fit
 
-# def fitdbmneg(x, gamma):
-#     """ function to fit time-distance profile of CME """   
-#     fit = (-1/gamma) * np.log(1 - gamma*(vinit - swspeed) * x) + swspeed*x + rinit
+def fitdbmneg(x, gamma, vinit, swspeed, rinit):
+    """ function to fit time-distance profile of CME """   
+    fit = (-1/gamma) * np.log(1 - gamma*(vinit - swspeed) * x) + swspeed*x + rinit
     
-#     return fit
+    return fit
 
-
-def logistic_growth(xdata,k):
+def logistic_growth(xdata, k):
     return xdata.shape[0]/(1+np.exp(
                                     -k*(
                                         np.arange(1,xdata.shape[0]+1,1)-xdata.shape[0]//2
@@ -357,13 +353,19 @@ def logistic_growth(xdata,k):
                                     )
                             )
 
-
-def cost_function(params,*args):
+def cost_function(params, *args):
     gamma = params
-    vinit,swspeed,rinit,ydata,x= args
-    predicted = fitdbm(x, gamma,vinit,swspeed,rinit)
+    vinit, swspeed, rinit, ydata, x = args
+    predicted = fitdbm(x, gamma, vinit, swspeed, rinit)
 
     return np.median(np.sqrt((ydata - predicted) ** 2 ))# * logistic_growth(ydata,0.3)/logistic_growth(ydata,0.3).max() )
+
+def cost_functionneg(params, *args):
+    gamma = params
+    vinit, swspeed, rinit, ydata, x = args
+    predicted = fitdbmneg(x, gamma, vinit, swspeed, rinit)
+
+    return np.median(np.sqrt((ydata - predicted) ** 2 ))
 
 # def cost_functionneg(gamma):
 #     predicted = fitdbmneg(xdata, gamma)
@@ -402,13 +404,10 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     xdata = speedtime.values
     ydata = distance_km
 
+    #testgamma = 1.7863506087704678e-08 
+    #testwind  = 200
 
-    testgamma = 1.7863506087704678e-08 
-    testwind  = 200
-
-    testy = (1/testgamma) * np.log(1 + testgamma*(vinit - testwind) * xdata) + testwind*xdata + rinit
-
-
+    #testy = (1/testgamma) * np.log(1 + testgamma*(vinit - testwind) * xdata) + testwind*xdata + rinit
 
     winds = np.arange(200, 775, 25)
     fit = np.zeros((len(winds), len(xdata)))
@@ -454,7 +453,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
         else:
             # Perform the optimization
-            result = minimize(cost_functionneg, initial_guess, method='Nelder-Mead', tol=1e-1)
+            result = minimize(cost_functionneg, initial_guess, args=(vinit,swspeed,rinit,ydata,xdata), method='Nelder-Mead')
             if silent == 0:
                 print('=====')
                 print('wind: ', winds[i], 'success: ', result.success)
@@ -481,19 +480,19 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     for i in range(len(winds)):
         if success[i]:
             res[i] = residuals[i,0] #np.mean(residuals[i,:])
-            print(res[i]/rsun)
+            #print(res[i]/rsun)
         else:
             res[i] = np.nan
     
     #pdb.set_trace()
             
     if det_plot:
-        fig, ax = plt.subplots(1, 1, figsize = (12,4), dpi = 300, facecolor='white')
+        fig, ax = plt.subplots(1, 1, figsize = (8,3), dpi = 300, facecolor='white')
 
-        ax.set_title('ELEvoHI DBMfits', size = 20)
-        ax.set_ylabel('CME Apex Speed [km s$^{-1}$]', fontsize = 20.0)
-        ax.set_xlabel('Heliocentric Distance [R$_\odot$]', fontsize = 20)
-        ax.tick_params(axis = 'both', which = 'major', labelsize = 15)
+        ax.set_title('ELEvoHI DBMfits', size = 16)
+        ax.set_ylabel('CME Apex Speed [km s$^{-1}$]', fontsize = 14, labelpad = 0)
+        ax.set_xlabel('Heliocentric Distance [R$_\odot$]', fontsize = 14, labelpad = 0)
+        ax.tick_params(axis = 'both', which = 'major', labelsize = 10, pad = -5)
 
         norm = mpl.colors.Normalize(vmin = winds.min(), vmax = winds.max())
         cmap = mpl.cm.ScalarMappable(norm = norm, cmap = mpl.cm.jet)
@@ -501,7 +500,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
         ax = plt.gca()
         cbar = plt.colorbar(cmap, pad = 0.02, ax=ax)
-        cbar.set_label('solar wind speed [km s$^{-1}$]', rotation = 270, fontsize = 15, labelpad = 20)
+        cbar.set_label('solar wind speed [km s$^{-1}$]', rotation = 270, fontsize = 14, labelpad = 20)
         cbar.ax.tick_params(axis='y', direction='inout', length=5, width=0, labelsize=12)
     
     gamma_v = []
@@ -535,7 +534,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 print('Mean Residual: ', round(res[i]/rsun, 2), 'solar radii')
                 print('Wind speed: ', winds[i])
             if det_plot:
-                ax.plot(distance_rsun, fitspeed[i,:], '-', label='fit', c=cmap.to_rgba(winds[i]))
+                ax.plot(distance_rsun, fitspeed[i,:], label='fit', linewidth=1, c=cmap.to_rgba(winds[i]))
         else:
             if silent == 0:
                 print('------------')
@@ -545,7 +544,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
             continue
 
     if det_plot:
-        ax.plot(distance_rsun, speed, 'o', label='data', c='black')
+        ax.plot(distance_rsun, speed, 'o', label='data', c='black', markersize=5)
         
         # Calculate y-axis limits
         # y_lower = min(speed) - 100
@@ -594,10 +593,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     gamma_valid = gamma_valid[sorted_indices]
     res_valid = res_valid[sorted_indices]
     winds_valid = winds_valid[sorted_indices]
-
-
-   
-    
+  
     #pdb.set_trace()
     
     if det_plot:
@@ -607,14 +603,14 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         plt.close(fig)
 
 
-    for i in range(0,5):
-        swspeed = winds_valid[i]
-        fit = fitdbm(xdata,gamma_valid[i],vinit,swspeed,rinit)
-        plt.plot(xdata,fit,c=mpl.cm.tab20(i+1),label=str(swspeed)+"  "+str(round(gamma_valid[i]*10**8,2))+" "+str(res_valid[i]))
-    plt.plot(xdata,ydata,label="track")
-    # plt.fill_between(xdata, ydata, fit)
-    plt.legend()
-    plt.show()
+    #for i in range(0,5):
+    #    swspeed = winds_valid[i]
+    #    fit = fitdbm(xdata,gamma_valid[i],vinit,swspeed,rinit)
+    #    plt.plot(xdata,fit,c=mpl.cm.tab20(i+1),label=str(swspeed)+"  "+str(round(gamma_valid[i]*10**8,2))+" "+str(res_valid[i]))
+    #plt.plot(xdata,ydata,label="track")
+    ## plt.fill_between(xdata, ydata, fit)
+    #plt.legend()
+    #plt.show()
 
     
     return gamma_valid, winds_valid, res_valid, tinit, rinit, vinit, swspeed, xdata, ydata
@@ -1515,6 +1511,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     return prediction
 
 def assess_prediction(prediction, target, is_time, is_speed):
+    
+    lead_time = np.nan
 # difference of prediction and in situ arrival
 # Find the row where "target" is "L1" and access the "arrival time" 
     if isinstance(is_time, datetime):
@@ -1536,7 +1534,7 @@ def assess_prediction(prediction, target, is_time, is_speed):
             print('Predicted arrival is earlier than observed.')
             print('Difference: ', formatted_hours, 'hours')
         else:   
-            print(' Predicted arrival is later than observed.')
+            print('Predicted arrival is later than observed.')
             print('Difference: ', formatted_hours, 'hours')
 
         if isinstance(is_speed, int):
@@ -1559,8 +1557,6 @@ def assess_prediction(prediction, target, is_time, is_speed):
     else:
             arrival_dt = np.nan
             arrival_dv = np.nan
-        
-    #pdb.set_trace()
             
     return arrival_dt, arrival_dv, prediction
 
@@ -1577,7 +1573,7 @@ def assess_ensemble(ensemble, det_results, det_run_no, no_det_run):
         if target_names[i] == 'No hit!':
             continue
         
-        print('target_names: ', target_names[i])
+        #print('target_names: ', target_names[i])
         
         ensemble['arrival time [UT]'] = pd.to_datetime(ensemble['arrival time [UT]'])
         
