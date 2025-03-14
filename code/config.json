@@ -1,7 +1,7 @@
 {
     "basic_path": "../../",
-    "eventdate": "20201207",
-    "HIobs": "A",
+    "eventdate": "20170910",
+    "HIobs": "L5",
     "mode": "science",
     "do_ensemble": true,
     "phi_FPF": false,
@@ -27,11 +27,11 @@
     62
     ],
     "halfwidth_step": 5,
-    "starttime":"2020-12-07 18:43",
-    "endtime":"2020-12-09 12:00",
+    "starttime":"2017-09-10 16:44",
+    "endtime":"2017-09-12 11:58",
     "outer_system": false,
     "movie": false,
     "silent": true,
-    "L1_ist_obs": "2020-12-10 02:10",
-    "L1_isv_obs": 481
+    "L1_ist_obs": "2017-09-12 18:31",
+    "L1_isv_obs": 440
     }

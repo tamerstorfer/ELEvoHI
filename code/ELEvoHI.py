@@ -68,6 +68,8 @@ def main():
     L45 = 0
     Ring = 0
     
+    #HIobs = L5, L1, L4, R1, R2, R3, R4, R5, R6
+    
     year = eventdate[:4]
     event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
@@ -742,313 +744,484 @@ def main():
             
                 
         #####################################################################
-        # get s/c and planet positions
+        # HI-observer
+        
+        if ISSI:
+            if L45:
+                if HIobs == 'L5':
+                    d = L5_r
+                    direction = L5_lon + phi
+                if HIobs == 'L4':
+                    d = L4_r
+                    direction = L4_lon - phi
+                if HIobs == 'L1e': # looks towards the eastern limb
+                    d = L1_r
+                    direction = L1_lon - phi
+                if HIobs == 'L1w': # looks towards the western limb
+                    d = L1_r
+                    direction = L1_lon + phi
+            if Ring:
+                if HIobs == 'R1e': # looks towards the eastern limb (R1 is same as L1)
+                    d = R1_r
+                    direction = R1_lon - phi
+                if HIobs == 'R1w':
+                    d = R1_r
+                    direction = R1_lon + phi
+                if HIobs == 'R2':
+                    d = R2_r
+                    direction = R2_lon - phi
+                if HIobs == 'R3':
+                    d = R3_r
+                    direction = R3_lon - phi
+                if HIobs == 'R4':
+                    d = R4_r
+                    direction = R4_lon - phi
+                if HIobs == 'R5':
+                    d = R5_r
+                    direction = R5_lon + phi
+                if HIobs == 'R6':
+                    d = R6_r
+                    direction = R6_lon + phi
+               
+        else:
+            #STEREO Ahead
+            if sta_available and HIobs == 'A':
+                d = sta_r
+                if sta_lon >=0:
+                    direction = sta_lon - phi
+                else:
+                    direction = sta_lon + phi       
 
-        #STEREO Ahead
-        if sta_available and HIobs == 'A':
-            d = sta_r
-            if sta_lon >=0:
-                direction = sta_lon - phi
-            else:
-                direction = sta_lon + phi       
-
+                
+            # STEREO Behind
+            if stb_available and HIobs == 'B':
+                d = stb_r
+                if stb_lon >=0:
+                    direction = stb_lon - phi
+                else:
+                    direction = stb_lon + phi
+                    
+            ############################################################################   
+            # calculate angular separation of CME apex from each target
             
-        # STEREO Behind
-        if stb_available and HIobs == 'B':
-            d = stb_r
-            if stb_lon >=0:
-                direction = stb_lon - phi
-            else:
-                direction = stb_lon + phi
+            if ISSI:
+                if L45:
+                    if abs(direction) + abs(L1_lon) < np.pi:
+                        delta_L1 = direction - L1_lon
+                    else:
+                        delta_L1 = direction - (L1_lon + 2 * np.pi * np.sign(direction))
+                        
+                    if abs(direction) + abs(L5_lon) < np.pi:
+                        delta_L5 = direction - L5_lon
+                    else:
+                        delta_L5 = direction - (L5_lon + 2 * np.pi * np.sign(direction))    
+                        
+                    if abs(direction) + abs(L4_lon) < np.pi:
+                        delta_L4 = direction - L4_lon
+                    else:
+                        delta_L4 = direction - (L4_lon + 2 * np.pi * np.sign(direction)) 
+                    
+                    delta_values = {
+                        'delta_L1': delta_L1,
+                        'delta_L4': delta_L4,
+                        'delta_L5': delta_L5
+                        }
                 
-        ############################################################################   
-        # calculate angular separation of CME apex from each target
+                if Ring:   
+                    if abs(direction) + abs(R1_lon) < np.pi:
+                        delta_R1 = direction - R1_lon
+                    else:
+                        delta_R1 = direction - (R1_lon + 2 * np.pi * np.sign(direction))    
+                        
+                    if abs(direction) + abs(R2_lon) < np.pi:
+                        delta_R2 = direction - R2_lon
+                    else:
+                        delta_R2 = direction - (R2_lon + 2 * np.pi * np.sign(direction))   
+                        
+                    if abs(direction) + abs(R3_lon) < np.pi:
+                        delta_R3 = direction - R3_lon
+                    else:
+                        delta_R3 = direction - (R3_lon + 2 * np.pi * np.sign(direction))  
+                         
+                    if abs(direction) + abs(R4_lon) < np.pi:
+                        delta_R4 = direction - R4_lon
+                    else:
+                        delta_R4 = direction - (R4_lon + 2 * np.pi * np.sign(direction))   
+                        
+                    if abs(direction) + abs(R5_lon) < np.pi:
+                        delta_R5 = direction - R5_lon
+                    else:
+                        delta_R5 = direction - (R5_lon + 2 * np.pi * np.sign(direction))   
+                                                
+                    if abs(direction) + abs(R6_lon) < np.pi:
+                        delta_R6 = direction - R6_lon
+                    else:
+                        delta_R6 = direction - (R6_lon + 2 * np.pi * np.sign(direction)) 
+                        
+                    delta_values = {
+                        'delta_R1': delta_R1,
+                        'delta_R2': delta_R2,
+                        'delta_R3': delta_R3,
+                        'delta_R4': delta_R4,
+                        'delta_R5': delta_R5,
+                        'delta_R6': delta_R6
+                        }
+                    
+            else:                       
+                if abs(direction) + abs(mars_lon) < np.pi:
+                    delta_mars = direction - mars_lon
+                else:
+                    delta_mars = direction - (mars_lon + 2 * np.pi * np.sign(direction))
 
-        if abs(direction) + abs(mars_lon) < np.pi:
-            delta_mars = direction - mars_lon
-        else:
-            delta_mars = direction - (mars_lon + 2 * np.pi * np.sign(direction))
+                if abs(direction) + abs(venus_lon) < np.pi:
+                    delta_venus = direction - venus_lon
+                else:
+                    delta_venus = direction - (venus_lon + 2 * np.pi * np.sign(direction))
 
-        if abs(direction) + abs(venus_lon) < np.pi:
-            delta_venus = direction - venus_lon
-        else:
-            delta_venus = direction - (venus_lon + 2 * np.pi * np.sign(direction))
+                if abs(direction) + abs(mercury_lon) < np.pi:
+                    delta_mercury = direction - mercury_lon
+                else:
+                    delta_mercury = direction - (mercury_lon + 2 * np.pi * np.sign(direction))
+                    
+                if abs(direction) + abs(L1_lon) < np.pi:
+                    delta_L1 = direction - L1_lon
+                else:
+                    delta_L1 = direction - (L1_lon + 2 * np.pi * np.sign(direction))
 
-        if abs(direction) + abs(mercury_lon) < np.pi:
-            delta_mercury = direction - mercury_lon
-        else:
-            delta_mercury = direction - (mercury_lon + 2 * np.pi * np.sign(direction))
-            
-        if abs(direction) + abs(L1_lon) < np.pi:
-            delta_L1 = direction - L1_lon
-        else:
-            delta_L1 = direction - (L1_lon + 2 * np.pi * np.sign(direction))
+                if abs(direction) + abs(earth_lon) < np.pi:
+                    delta_earth = direction - earth_lon
+                else:
+                    delta_earth = direction - (earth_lon + 2 * np.pi * np.sign(direction))
 
-        if abs(direction) + abs(earth_lon) < np.pi:
-            delta_earth = direction - earth_lon
-        else:
-            delta_earth = direction - (earth_lon + 2 * np.pi * np.sign(direction))
+                delta_values = {
+                    'delta_L1': delta_L1,
+                    'delta_mercury': delta_mercury,
+                    'delta_venus': delta_venus,
+                    'delta_earth': delta_earth,
+                    'delta_mars': delta_mars,
+                }
 
-        delta_values = {
-            'delta_L1': delta_L1,
-            'delta_mercury': delta_mercury,
-            'delta_venus': delta_venus,
-            'delta_earth': delta_earth,
-            'delta_mars': delta_mars,
-        }
+                if sta_available:
+                    if abs(direction) + abs(sta_lon) < np.pi:
+                        delta_sta = direction - sta_lon
+                        # New entry as a dictionary
+                    else:
+                        delta_sta = direction - (sta_lon + 2 * np.pi * np.sign(direction))
+                    add_sta = {'delta_sta': delta_sta}
+                    delta_values.update(add_sta)
 
-        if sta_available:
-            if abs(direction) + abs(sta_lon) < np.pi:
-                delta_sta = direction - sta_lon
-                # New entry as a dictionary
-            else:
-                delta_sta = direction - (sta_lon + 2 * np.pi * np.sign(direction))
-            add_sta = {'delta_sta': delta_sta}
-            delta_values.update(add_sta)
+                if psp_available:
+                    if abs(direction) + abs(psp_lon) < np.pi:
+                        delta_psp = direction - psp_lon
+                    else:
+                        delta_psp = direction - (psp_lon + 2 * np.pi * np.sign(direction))
+                    add_psp = {'delta_psp': delta_psp}
+                    delta_values.update(add_psp)
 
-        if psp_available:
-            if abs(direction) + abs(psp_lon) < np.pi:
-                delta_psp = direction - psp_lon
-            else:
-                delta_psp = direction - (psp_lon + 2 * np.pi * np.sign(direction))
-            add_psp = {'delta_psp': delta_psp}
-            delta_values.update(add_psp)
+                if solo_available:
+                    if abs(direction) + abs(solo_lon) < np.pi:
+                        delta_solo = direction - solo_lon
+                    else:
+                        delta_solo = direction - (solo_lon + 2 * np.pi * np.sign(direction))
+                    add_solo = {'delta_solo': delta_solo}
+                    delta_values.update(add_solo)
 
-        if solo_available:
-            if abs(direction) + abs(solo_lon) < np.pi:
-                delta_solo = direction - solo_lon
-            else:
-                delta_solo = direction - (solo_lon + 2 * np.pi * np.sign(direction))
-            add_solo = {'delta_solo': delta_solo}
-            delta_values.update(add_solo)
+                if bepi_available:
+                    if abs(direction) + abs(bepi_lon) < np.pi:
+                        delta_bepi = direction - bepi_lon
+                    else:
+                        delta_bepi = direction - (bepi_lon + 2 * np.pi * np.sign(direction))
+                    add_bepi = {'delta_bepi': delta_bepi}
+                    delta_values.update(add_bepi)
 
-        if bepi_available:
-            if abs(direction) + abs(bepi_lon) < np.pi:
-                delta_bepi = direction - bepi_lon
-            else:
-                delta_bepi = direction - (bepi_lon + 2 * np.pi * np.sign(direction))
-            add_bepi = {'delta_bepi': delta_bepi}
-            delta_values.update(add_bepi)
+                if stb_available:
+                    if abs(direction) + abs(stb_lon) < np.pi:
+                        delta_stb = direction - stb_lon
+                    else:
+                        delta_stb = direction - (stb_lon + 2 * np.pi * np.sign(direction))
+                    add_stb = {'delta_stb': delta_stb}
+                    delta_values.update(add_stb)
 
-        if stb_available:
-            if abs(direction) + abs(stb_lon) < np.pi:
-                delta_stb = direction - stb_lon
-            else:
-                delta_stb = direction - (stb_lon + 2 * np.pi * np.sign(direction))
-            add_stb = {'delta_stb': delta_stb}
-            delta_values.update(add_stb)
+                if vex_available:
+                    if abs(direction) + abs(vex_lon) < np.pi:
+                        delta_vex = direction - vex_lon
+                    else:
+                        delta_vex = direction - (vex_lon + 2 * np.pi * np.sign(direction))
+                    add_vex = {'delta_vex': delta_vex}
+                    delta_values.update(add_vex)
+                        
+                if mes_available:
+                    if abs(direction) + abs(mes_lon) < np.pi:
+                        delta_mes = direction - mes_lon
+                    else:
+                        delta_mes = direction - (mes_lon + 2 * np.pi * np.sign(direction))
+                    add_mes = {'delta_mes': delta_mes}
+                    delta_values.update(add_mes)
 
-        if vex_available:
-            if abs(direction) + abs(vex_lon) < np.pi:
-                delta_vex = direction - vex_lon
-            else:
-                delta_vex = direction - (vex_lon + 2 * np.pi * np.sign(direction))
-            add_vex = {'delta_vex': delta_vex}
-            delta_values.update(add_vex)
-                
-        if mes_available:
-            if abs(direction) + abs(mes_lon) < np.pi:
-                delta_mes = direction - mes_lon
-            else:
-                delta_mes = direction - (mes_lon + 2 * np.pi * np.sign(direction))
-            add_mes = {'delta_mes': delta_mes}
-            delta_values.update(add_mes)
+                if outer_system == 1:
+                    if abs(direction) + abs(jupiter_lon) < np.pi:
+                        delta_jupiter = direction - jupiter_lon
+                    else:
+                        delta_jupiter = direction - (jupiter_lon + 2 * np.pi * np.sign(direction))
 
-        if outer_system == 1:
-            if abs(direction) + abs(jupiter_lon) < np.pi:
-                delta_jupiter = direction - jupiter_lon
-            else:
-                delta_jupiter = direction - (jupiter_lon + 2 * np.pi * np.sign(direction))
+                    if abs(direction) + abs(saturn_lon) < np.pi:
+                        delta_saturn = direction - saturn_lon
+                    else:
+                        delta_saturn = direction - (saturn_lon + 2 * np.pi * np.sign(direction))
 
-            if abs(direction) + abs(saturn_lon) < np.pi:
-                delta_saturn = direction - saturn_lon
-            else:
-                delta_saturn = direction - (saturn_lon + 2 * np.pi * np.sign(direction))
-
-            if abs(direction) + abs(uranus_lon) < np.pi:
-                delta_uranus = direction - uranus_lon
-            else:
-                delta_uranus = direction - (uranus_lon + 2 * np.pi * np.sign(direction))
-                
-            if abs(direction) + abs(neptune_lon) < np.pi:
-                delta_neptune = direction - neptune_lon
-            else:
-                delta_neptune = direction - (neptune_lon + 2 * np.pi * np.sign(direction))
-            delta_outer = {
-                'delta_jupiter': delta_jupiter,
-                'delta_saturn': delta_saturn,
-                'delta_uranus': delta_uranus,
-                'delta_neptune': delta_neptune}
-            delta_values.update(delta_outer)
+                    if abs(direction) + abs(uranus_lon) < np.pi:
+                        delta_uranus = direction - uranus_lon
+                    else:
+                        delta_uranus = direction - (uranus_lon + 2 * np.pi * np.sign(direction))
+                        
+                    if abs(direction) + abs(neptune_lon) < np.pi:
+                        delta_neptune = direction - neptune_lon
+                    else:
+                        delta_neptune = direction - (neptune_lon + 2 * np.pi * np.sign(direction))
+                    delta_outer = {
+                        'delta_jupiter': delta_jupiter,
+                        'delta_saturn': delta_saturn,
+                        'delta_uranus': delta_uranus,
+                        'delta_neptune': delta_neptune}
+                    delta_values.update(delta_outer)
                 
         #####################################################################################
         # print deltas for each target and check for hits
+        
+        if ISSI:
+            if L45:
+                print('Delta(CME apex, L1): ', np.rad2deg(delta_L1))
+                print('Delta(CME apex, L4): ', np.rad2deg(delta_L4))
+                print('Delta(CME apex, L5): ', np.rad2deg(delta_L5))
+                
+                if round(np.rad2deg(np.abs(delta_L1)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1 = 1
+                else:
+                    hit_L1 = 0
+                if round(np.rad2deg(np.abs(delta_L4)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L4 = 1
+                else:
+                    hit_L4 = 0
+                if round(np.rad2deg(np.abs(delta_L5)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L5 = 1
+                else:
+                    hit_L5 = 0  
+                    
+                hit_counts = {
+                    'hit_L1': hit_L1,
+                    'hit_L4': hit_L4,
+                    'hit_L5': hit_L5
+                } 
+                   
+            if Ring:
+                print('Delta(CME apex, R1): ', np.rad2deg(delta_R1))
+                print('Delta(CME apex, R2): ', np.rad2deg(delta_R2))
+                print('Delta(CME apex, R3): ', np.rad2deg(delta_R3))
+                print('Delta(CME apex, R4): ', np.rad2deg(delta_R4))
+                print('Delta(CME apex, R5): ', np.rad2deg(delta_R5))
+                print('Delta(CME apex, R6): ', np.rad2deg(delta_R6))
+                
+                if round(np.rad2deg(np.abs(delta_R1)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_R1 = 1
+                else:
+                    hit_R1 = 0
+                if round(np.rad2deg(np.abs(delta_R2)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_R2 = 1
+                else:
+                    hit_R2 = 0
+                if round(np.rad2deg(np.abs(delta_R3)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_R3 = 1
+                else:
+                    hit_R3 = 0
+                if round(np.rad2deg(np.abs(delta_R4)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_R4 = 1
+                else:
+                    hit_R4 = 0
+                if round(np.rad2deg(np.abs(delta_R5)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_R5 = 1
+                else:
+                    hit_R5 = 0      
+                if round(np.rad2deg(np.abs(delta_R6)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_R6 = 1
+                else:
+                    hit_R6 = 0        
+                
+                hit_counts = {
+                    'hit_R1': hit_R1,
+                    'hit_R2': hit_R2,
+                    'hit_R3': hit_R3,
+                    'hit_R4': hit_R4,
+                    'hit_R5': hit_R5,
+                    'hit_R6': hit_R6
+                }    
+        
+        else:           
 
-        if sta_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, STEREO-A): ', np.rad2deg(delta_sta))
-            if round(np.rad2deg(np.abs(delta_sta)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_sta = 1
+            if sta_available == 1:
+                if silent == 0:
+                    print('Delta(CME apex, STEREO-A): ', np.rad2deg(delta_sta))
+                if round(np.rad2deg(np.abs(delta_sta)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_sta = 1
+                else:
+                    hit_sta = 0
             else:
                 hit_sta = 0
-        else:
-            hit_sta = 0
 
-        if psp_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, Parker Solar Probe): ', np.rad2deg(delta_psp))
-            if round(np.rad2deg(np.abs(delta_psp)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_psp = 1
+            if psp_available == 1:
+                if silent == 0:
+                    print('Delta(CME apex, Parker Solar Probe): ', np.rad2deg(delta_psp))
+                if round(np.rad2deg(np.abs(delta_psp)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_psp = 1
+                else:
+                    hit_psp = 0
             else:
                 hit_psp = 0
-        else:
-            hit_psp = 0
 
-        if solo_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, SolO): ', np.rad2deg(delta_solo))
-            if round(np.rad2deg(np.abs(delta_solo)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_solo = 1
+            if solo_available == 1:
+                if silent == 0:
+                    print('Delta(CME apex, SolO): ', np.rad2deg(delta_solo))
+                if round(np.rad2deg(np.abs(delta_solo)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_solo = 1
+                else:
+                    hit_solo = 0
             else:
                 hit_solo = 0
-        else:
-            hit_solo = 0
 
-        if bepi_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, BepiColombo): ', np.rad2deg(delta_bepi))
-            if round(np.rad2deg(np.abs(delta_bepi)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_bepi = 1
+            if bepi_available == 1:
+                if silent == 0:
+                    print('Delta(CME apex, BepiColombo): ', np.rad2deg(delta_bepi))
+                if round(np.rad2deg(np.abs(delta_bepi)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_bepi = 1
+                else:
+                    hit_bepi = 0
             else:
                 hit_bepi = 0
-        else:
-            hit_bepi = 0
 
-        if stb_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, STEREO-B): ', np.rad2deg(delta_stb))
-            if round(np.rad2deg(np.abs(delta_stb)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_stb = 1
+            if stb_available == 1:
+                if silent == 0:
+                    print('Delta(CME apex, STEREO-B): ', np.rad2deg(delta_stb))
+                if round(np.rad2deg(np.abs(delta_stb)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_stb = 1
+                else:
+                    hit_stb = 0
             else:
                 hit_stb = 0
-        else:
-            hit_stb = 0
 
-        if vex_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, Venus Express): ', np.rad2deg(delta_vex))
-            if round(np.rad2deg(np.abs(delta_vex)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_vex = 1
+            if vex_available == 1:
+                if silent == 0:
+                    print('Delta(CME apex, Venus Express): ', np.rad2deg(delta_vex))
+                if round(np.rad2deg(np.abs(delta_vex)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_vex = 1
+                else:
+                    hit_vex = 0
             else:
                 hit_vex = 0
-        else:
-            hit_vex = 0
-                
-        if mes_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, MESSENGER: ', np.rad2deg(delta_mes))
-            if round(np.rad2deg(np.abs(delta_mes)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_mes = 1
+                    
+            if mes_available == 1:
+                if silent == 0:
+                    print('Delta(CME apex, MESSENGER: ', np.rad2deg(delta_mes))
+                if round(np.rad2deg(np.abs(delta_mes)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_mes = 1
+                else:
+                    hit_mes = 0
             else:
                 hit_mes = 0
-        else:
-            hit_mes = 0
-            
-        if silent == 0:
-                print('Delta(CME apex, Mercury): ', np.rad2deg(delta_mercury))
-
-        if round(np.rad2deg(np.abs(delta_mercury)), 2) < round(np.rad2deg(halfwidth), 2):
-            hit_mercury = 1
-        else:
-            hit_mercury = 0
-            
-        if silent == 0:
-                print('Delta(CME apex, Venus): ', np.rad2deg(delta_venus))
-
-        if round(np.rad2deg(np.abs(delta_venus)), 2) < round(np.rad2deg(halfwidth), 2):
-            hit_venus = 1
-        else:
-            hit_venus = 0
-
-        if silent == 0:
-                print('Delta(CME apex, L1): ', np.rad2deg(delta_L1))
-
-        if round(np.rad2deg(np.abs(delta_L1)), 2) < round(np.rad2deg(halfwidth), 2):
-            hit_L1 = 1
-        else:
-            hit_L1 = 0
-
-        if silent == 0:
-                print('Delta(CME apex, Earth): ', np.rad2deg(delta_earth))
-
-        if round(np.rad2deg(np.abs(delta_earth)), 2) < round(np.rad2deg(halfwidth), 2):
-            hit_earth = 1
-        else:
-            hit_earth = 0
-
-        if silent == 0:
-                print('Delta(CME apex, Mars): ', np.rad2deg(delta_mars))
-
-        if round(np.rad2deg(np.abs(delta_mars)), 2) < round(np.rad2deg(halfwidth), 2):
-            hit_mars = 1
-        else:
-            hit_mars = 0
-        
-        hit_counts = {
-            'hit_sta': hit_sta,
-            'hit_stb': hit_stb,
-            'hit_mes': hit_mes,
-            'hit_vex': hit_vex,
-            'hit_solo': hit_solo,
-            'hit_psp': hit_psp,
-            'hit_bepi': hit_bepi,
-            'hit_L1': hit_L1,
-            'hit_mercury': hit_mercury,
-            'hit_venus': hit_venus,
-            'hit_earth': hit_earth,
-            'hit_mars': hit_mars,
-        }
-
-        if outer_system == 1:
-            
-            if silent == 0:
-                print('Delta(CME apex, Jupiter): ', np.rad2deg(delta_jupiter))
-
-            if round(np.rad2deg(np.abs(delta_jupiter)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_jupiter = 1
-            else:
-                hit_jupiter = 0
                 
             if silent == 0:
-                print('Delta(CME apex, Saturn): ', np.rad2deg(delta_saturn))
+                    print('Delta(CME apex, Mercury): ', np.rad2deg(delta_mercury))
 
-            if round(np.rad2deg(np.abs(delta_saturn)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_saturn = 1
+            if round(np.rad2deg(np.abs(delta_mercury)), 2) < round(np.rad2deg(halfwidth), 2):
+                hit_mercury = 1
             else:
-                hit_saturn = 0
+                hit_mercury = 0
                 
             if silent == 0:
-                print('Delta(CME apex, Uranus): ', np.rad2deg(delta_uranus))
+                    print('Delta(CME apex, Venus): ', np.rad2deg(delta_venus))
 
-            if round(np.rad2deg(np.abs(delta_uranus)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_uranus = 1
+            if round(np.rad2deg(np.abs(delta_venus)), 2) < round(np.rad2deg(halfwidth), 2):
+                hit_venus = 1
             else:
-                hit_uranus = 0
+                hit_venus = 0
+
+            if silent == 0:
+                    print('Delta(CME apex, L1): ', np.rad2deg(delta_L1))
+
+            if round(np.rad2deg(np.abs(delta_L1)), 2) < round(np.rad2deg(halfwidth), 2):
+                hit_L1 = 1
+            else:
+                hit_L1 = 0
+
+            if silent == 0:
+                    print('Delta(CME apex, Earth): ', np.rad2deg(delta_earth))
+
+            if round(np.rad2deg(np.abs(delta_earth)), 2) < round(np.rad2deg(halfwidth), 2):
+                hit_earth = 1
+            else:
+                hit_earth = 0
+
+            if silent == 0:
+                    print('Delta(CME apex, Mars): ', np.rad2deg(delta_mars))
+
+            if round(np.rad2deg(np.abs(delta_mars)), 2) < round(np.rad2deg(halfwidth), 2):
+                hit_mars = 1
+            else:
+                hit_mars = 0
             
-            if silent == 0:
-                print('Delta(CME apex, Neptune): ', np.rad2deg(delta_neptune))
-
-            if round(np.rad2deg(np.abs(delta_neptune)), 2) < round(np.rad2deg(halfwidth), 2):
-                hit_neptune = 1
-            else:
-                hit_neptune = 0
-                
-            outer_hits = {
-                'hit_jupiter': hit_jupiter,
-                'hit_saturn': hit_saturn,
-                'hit_uranus': hit_uranus,
-                'hit_neptune': hit_neptune
+            hit_counts = {
+                'hit_sta': hit_sta,
+                'hit_stb': hit_stb,
+                'hit_mes': hit_mes,
+                'hit_vex': hit_vex,
+                'hit_solo': hit_solo,
+                'hit_psp': hit_psp,
+                'hit_bepi': hit_bepi,
+                'hit_L1': hit_L1,
+                'hit_mercury': hit_mercury,
+                'hit_venus': hit_venus,
+                'hit_earth': hit_earth,
+                'hit_mars': hit_mars
             }
+
+            if outer_system == 1:
+                
+                if silent == 0:
+                    print('Delta(CME apex, Jupiter): ', np.rad2deg(delta_jupiter))
+
+                if round(np.rad2deg(np.abs(delta_jupiter)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_jupiter = 1
+                else:
+                    hit_jupiter = 0
+                    
+                if silent == 0:
+                    print('Delta(CME apex, Saturn): ', np.rad2deg(delta_saturn))
+
+                if round(np.rad2deg(np.abs(delta_saturn)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_saturn = 1
+                else:
+                    hit_saturn = 0
+                    
+                if silent == 0:
+                    print('Delta(CME apex, Uranus): ', np.rad2deg(delta_uranus))
+
+                if round(np.rad2deg(np.abs(delta_uranus)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_uranus = 1
+                else:
+                    hit_uranus = 0
+                
+                if silent == 0:
+                    print('Delta(CME apex, Neptune): ', np.rad2deg(delta_neptune))
+
+                if round(np.rad2deg(np.abs(delta_neptune)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_neptune = 1
+                else:
+                    hit_neptune = 0
+                    
+                outer_hits = {
+                    'hit_jupiter': hit_jupiter,
+                    'hit_saturn': hit_saturn,
+                    'hit_uranus': hit_uranus,
+                    'hit_neptune': hit_neptune
+                }
         
         if not do_ensemble:
             det_plot = True
@@ -1152,91 +1325,109 @@ def main():
         print('Drag parameter:', round(gamma*1e7, 2), '1e-7')
         print('Ambient solar wind speed:', winds, 'km/s')
         
-        target_l1_present = prediction['target'] == 'L1'
-        target_stereoa_present = prediction['target'] == 'STEREO-A'
-        target_stereob_present = prediction['target'] == 'STEREO-B'
-        target_solo_present = prediction['target'] == 'Solar Orbiter'
-        target_bepi_present = prediction['target'] == 'BepiColombo'
-        target_psp_present = prediction['target'] == 'Parker Solar Probe'
-        target_mes_present = prediction['target'] == 'MESSENGER'
-        target_vex_present = prediction['target'] == 'Venus Express'
-
-        target_mercury_present = prediction['target'] == 'Mercury'
-        target_venus_present = prediction['target'] == 'Venus'
-        target_earth_present = prediction['target'] == 'Earth'
-        target_mars_present = prediction['target'] == 'Mars'
-        target_jupiter_present = prediction['target'] == 'Jupiter'
-        target_saturn_present = prediction['target'] == 'Saturn'
-        target_uranus_present = prediction['target'] == 'Uranus'
-        target_neptune_present = prediction['target'] == 'Neptune'
-        
         any_dt_present = False
-
-        if target_l1_present.any():
-            dt_L1, dv_L1, prediction = assess_prediction(prediction, 'L1', L1_istime, L1_isspeed)
-            any_dt_present = True
-
-        if target_stereoa_present.any():
-            dt_stereoa, dv_stereoa, prediction = assess_prediction(prediction, 'STEREO-A', STEREOA_istime, STEREOA_isspeed)
-            any_dt_present = True
-
-        if target_stereob_present.any():
-            dt_stereob, dv_stereob, prediction = assess_prediction(prediction, 'STEREO-B', STEREOB_istime, STEREOB_isspeed)
-            any_dt_present = True
-            
-        if target_solo_present.any():
-            dt_solo, dv_solo, prediction = assess_prediction(prediction, 'Solar Orbiter', SOLO_istime, SOLO_isspeed)
-            any_dt_present = True
-            
-        if target_bepi_present.any():
-            dt_bepi, dv_bepi, prediction = assess_prediction(prediction, 'BepiColombo', BEPI_istime, BEPI_isspeed)
-            any_dt_present = True
-            
-        if target_psp_present.any():
-            dt_psp, dv_psp, prediction = assess_prediction(prediction, 'Parker Solar Probe', PSP_istime, PSP_isspeed)
-            any_dt_present = True
-            
-        if target_mes_present.any():
-            dt_mes, dv_mes, prediction = assess_prediction(prediction, 'MESSENGER', MES_istime, MES_isspeed)
-            any_dt_present = True
-
-        if target_vex_present.any():
-            dt_vex, dv_vex, prediction = assess_prediction(prediction, 'Venus Express', VEX_istime, VEX_isspeed)
-            any_dt_present = True
-            
-        if target_mercury_present.any():
-            dt_mercury, dv_mercury, prediction = assess_prediction(prediction, 'Mercury', MERCURY_istime, MERCURY_isspeed)
-            any_dt_present = True
-            
-        if target_venus_present.any():
-            dt_venus, dv_venus, prediction = assess_prediction(prediction, 'Venus', VENUS_istime, VENUS_isspeed)
-            any_dt_present = True
-            
-        if target_earth_present.any():
-            dt_earth, dv_earth, prediction = assess_prediction(prediction, 'Earth', EARTH_istime, EARTH_isspeed)
-            any_dt_present = True
-
-        if target_mars_present.any():
-            dt_mars, dv_mars, prediction = assess_prediction(prediction, 'Mars', MARS_istime, MARS_isspeed)
-            any_dt_present = True
-            
-        if target_jupiter_present.any():
-            dt_jupiter, dv_jupiter, prediction = assess_prediction(prediction, 'Jupiter', JUPITER_istime, JUPITER_isspeed)
-            any_dt_present = True
-            
-        if target_saturn_present.any():
-            dt_saturn, dv_saturn, prediction = assess_prediction(prediction, 'Saturn', SATURN_istime, SATURN_isspeed)
-            any_dt_present = True
-            
-        if target_uranus_present.any():
-            dt_uranus, dv_uranus, prediction = assess_prediction(prediction, 'Uranus', URANUS_istime, URANUS_isspeed)
-            any_dt_present = True
-
-        if target_neptune_present.any():
-            dt_neptune, dv_neptune, prediction = assess_prediction(prediction, 'Neptune', NEPTUNE_istime, NEPTUNE_isspeed)
-            any_dt_present = True
         
+        if ISSI:
+            target_L1_present = prediction['target'] == 'L1'
+            target_L4_present = prediction['target'] == 'L4'
+            target_L5_present = prediction['target'] == 'L5'
+            target_R1_present = prediction['target'] == 'R1'
+            target_R2_present = prediction['target'] == 'R2'
+            target_R3_present = prediction['target'] == 'R3'
+            target_R4_present = prediction['target'] == 'R4'
+            target_R5_present = prediction['target'] == 'R5'
+            target_R6_present = prediction['target'] == 'R6'
+            
+            if target_L1_present.any():
+                dt_L1, dv_L1, prediction = assess_prediction(prediction, 'L1', L1_istime, L1_isspeed)
+                any_dt_present = True
+            if target_R1_present.any():
+                dt_R1, dv_R1, prediction = assess_prediction(prediction, 'R1', R1_istime, R1_isspeed)
+                any_dt_present = True          
+                                
+        else:       
+            target_l1_present = prediction['target'] == 'L1'
+            target_stereoa_present = prediction['target'] == 'STEREO-A'
+            target_stereob_present = prediction['target'] == 'STEREO-B'
+            target_solo_present = prediction['target'] == 'Solar Orbiter'
+            target_bepi_present = prediction['target'] == 'BepiColombo'
+            target_psp_present = prediction['target'] == 'Parker Solar Probe'
+            target_mes_present = prediction['target'] == 'MESSENGER'
+            target_vex_present = prediction['target'] == 'Venus Express'
 
+            target_mercury_present = prediction['target'] == 'Mercury'
+            target_venus_present = prediction['target'] == 'Venus'
+            target_earth_present = prediction['target'] == 'Earth'
+            target_mars_present = prediction['target'] == 'Mars'
+            target_jupiter_present = prediction['target'] == 'Jupiter'
+            target_saturn_present = prediction['target'] == 'Saturn'
+            target_uranus_present = prediction['target'] == 'Uranus'
+            target_neptune_present = prediction['target'] == 'Neptune'
+
+            if target_l1_present.any():
+                dt_L1, dv_L1, prediction = assess_prediction(prediction, 'L1', L1_istime, L1_isspeed)
+                any_dt_present = True
+
+            if target_stereoa_present.any():
+                dt_stereoa, dv_stereoa, prediction = assess_prediction(prediction, 'STEREO-A', STEREOA_istime, STEREOA_isspeed)
+                any_dt_present = True
+
+            if target_stereob_present.any():
+                dt_stereob, dv_stereob, prediction = assess_prediction(prediction, 'STEREO-B', STEREOB_istime, STEREOB_isspeed)
+                any_dt_present = True
+                
+            if target_solo_present.any():
+                dt_solo, dv_solo, prediction = assess_prediction(prediction, 'Solar Orbiter', SOLO_istime, SOLO_isspeed)
+                any_dt_present = True
+                
+            if target_bepi_present.any():
+                dt_bepi, dv_bepi, prediction = assess_prediction(prediction, 'BepiColombo', BEPI_istime, BEPI_isspeed)
+                any_dt_present = True
+                
+            if target_psp_present.any():
+                dt_psp, dv_psp, prediction = assess_prediction(prediction, 'Parker Solar Probe', PSP_istime, PSP_isspeed)
+                any_dt_present = True
+                
+            if target_mes_present.any():
+                dt_mes, dv_mes, prediction = assess_prediction(prediction, 'MESSENGER', MES_istime, MES_isspeed)
+                any_dt_present = True
+
+            if target_vex_present.any():
+                dt_vex, dv_vex, prediction = assess_prediction(prediction, 'Venus Express', VEX_istime, VEX_isspeed)
+                any_dt_present = True
+                
+            if target_mercury_present.any():
+                dt_mercury, dv_mercury, prediction = assess_prediction(prediction, 'Mercury', MERCURY_istime, MERCURY_isspeed)
+                any_dt_present = True
+                
+            if target_venus_present.any():
+                dt_venus, dv_venus, prediction = assess_prediction(prediction, 'Venus', VENUS_istime, VENUS_isspeed)
+                any_dt_present = True
+                
+            if target_earth_present.any():
+                dt_earth, dv_earth, prediction = assess_prediction(prediction, 'Earth', EARTH_istime, EARTH_isspeed)
+                any_dt_present = True
+
+            if target_mars_present.any():
+                dt_mars, dv_mars, prediction = assess_prediction(prediction, 'Mars', MARS_istime, MARS_isspeed)
+                any_dt_present = True
+                
+            if target_jupiter_present.any():
+                dt_jupiter, dv_jupiter, prediction = assess_prediction(prediction, 'Jupiter', JUPITER_istime, JUPITER_isspeed)
+                any_dt_present = True
+                
+            if target_saturn_present.any():
+                dt_saturn, dv_saturn, prediction = assess_prediction(prediction, 'Saturn', SATURN_istime, SATURN_isspeed)
+                any_dt_present = True
+                
+            if target_uranus_present.any():
+                dt_uranus, dv_uranus, prediction = assess_prediction(prediction, 'Uranus', URANUS_istime, URANUS_isspeed)
+                any_dt_present = True
+
+            if target_neptune_present.any():
+                dt_neptune, dv_neptune, prediction = assess_prediction(prediction, 'Neptune', NEPTUNE_istime, NEPTUNE_isspeed)
+                any_dt_present = True
+        
         if do_ensemble:
             tmp_ensemble = pd.DataFrame()
             tmp_ensemble['run no.'] = [int(runnumber)] * len(prediction)
