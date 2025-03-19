@@ -62,11 +62,12 @@ def main():
     do_ensemble = config['do_ensemble']
     endtime = datetime.strptime(config['endtime'], "%Y-%m-%d %H:%M")
     starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
+    event_path = os.path.join(config['track_path'], config['tracklength'])
     
     lead_time = None
     
     year = eventdate[:4]
-    event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
+    #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
     #event_path = '../../' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
