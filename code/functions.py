@@ -94,10 +94,10 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
 
 
     # Calculate the mean values for each element across tracks
-    mean_values = np.mean(interpolated_tracks, axis=0)
+    mean_values = np.nanmean(interpolated_tracks, axis=0)
 
     # Calculate the standard deviations for each element across tracks
-    std_values = np.std(interpolated_tracks, axis=0)
+    std_values = np.nanstd(interpolated_tracks, axis=0)
 
     # Calculate mean values by dividing by the number of files
     num_files = len(files)

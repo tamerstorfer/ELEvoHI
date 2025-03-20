@@ -1,37 +1,39 @@
 {
-    "basic_path": "../../",
-    "eventdate": "20201207",
-    "HIobs": "A",
-    "mode": "science",
-    "do_ensemble": true,
-    "phi_FPF": false,
-    "phi_FPF_range": [
-    10,
-    10
-    ],
-    "phi_manual": [
-    72,
-    62,
-    82
-    ],
-    "phi_step": 2,
-    "f": [
-    0.8,
-    0.7,
-    1
-    ],
-    "f_step": 0.1,
-    "halfwidth": [
-    52,
-    42,
-    62
-    ],
-    "halfwidth_step": 5,
-    "starttime":"2020-12-07 18:43",
-    "endtime":"2020-12-09 12:00",
-    "outer_system": false,
-    "movie": false,
-    "silent": true,
-    "L1_ist_obs": "2020-12-10 02:10",
-    "L1_isv_obs": 481
-    }
+"basic_path": "../../",
+"track_path": "/Users/tanja/HIDA_tracks/jdl/HCME_A_20210509_01/",
+"tracklength": "timestep_11/",
+"eventdate": "20210509",
+"HIobs": "A",
+"mode": "science",
+"do_ensemble": true,
+"phi_FPF": true,
+"phi_FPF_range": [
+10,
+10
+],
+"phi_manual": [
+72,
+62,
+82
+],
+"phi_step": 2,
+"f": [
+0.8,
+0.7,
+1
+],
+"f_step": 0.1,
+"halfwidth": [
+45,
+35,
+55
+],
+"halfwidth_step": 5,
+"starttime": "2021-05-09 15:18",
+"endtime": "2021-05-11 18:38",
+"outer_system": false,
+"movie": false,
+"silent": true,
+"L1_ist_obs": "2021-05-12 05:48",
+"L1_isv_obs": 445
+}
