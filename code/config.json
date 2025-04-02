@@ -1,8 +1,8 @@
 {
 "basic_path": "../../",
-"track_path": "/Users/tanja/HIDA_tracks/jdl/HCME_A_20210509_01/",
-"tracklength": "timestep_11/",
-"eventdate": "20210509",
+"track_path": "/Users/tanja/CME_Tracking/tracks/HCME_A_20210410_01",
+"tracklength": "timestep_14/",
+"eventdate": "20210410",
 "HIobs": "A",
 "mode": "science",
 "do_ensemble": true,
@@ -29,11 +29,11 @@
 55
 ],
 "halfwidth_step": 5,
-"starttime": "2021-05-09 15:18",
-"endtime": "2021-05-11 18:38",
+"starttime": "2021-04-10 19:58",
+"endtime": "2021-04-13 13:58",
 "outer_system": false,
 "movie": false,
 "silent": true,
-"L1_ist_obs": "2021-05-12 05:48",
-"L1_isv_obs": 445
+"L1_ist_obs": "2021-04-15 03:28",
+"L1_isv_obs": 383
 }

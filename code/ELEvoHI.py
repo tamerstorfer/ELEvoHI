@@ -1136,12 +1136,8 @@ def main():
             file.write('No DBMfit for runnumbers:' + '\n')
             file.write(str(nofit))
     else:
-        #det_run_count = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values
-
         filtered_ensemble = ensemble[(ensemble['run no.'] == det_run_no) & (ensemble['target'] == 'L1')]
         det_run_count = filtered_ensemble['dt [h]'].values
-    
-    #pdb.set_trace()
 
     if np.isnan(det_run_count): 
         with open(txt_file, 'a') as file:

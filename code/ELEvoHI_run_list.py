@@ -55,7 +55,7 @@ def main():
         
         for csv_file in folder_path.glob("*.csv"):          
             df = pd.read_csv(csv_file)            
-            df["TRACK_DATE"] = pd.to_datetime(df["TRACK_DATE"], format="%Y-%b-%d %H:%M:%S.%f")            
+            df["TRACK_DATE"] = pd.to_datetime(df["TRACK_DATE"], format="%Y-%m-%d %H:%M:%S.%f")            
             all_dates.extend(df["TRACK_DATE"])   
 
         starttime = min(all_dates)
@@ -64,7 +64,14 @@ def main():
         modify_config(config_file, starttime, endtime, tracklength)
         
         # Run ELEvoHI
-        subprocess.run(["python", "ELEvoHI.py"], check=True)
+        #subprocess.run(["python", "ELEvoHI.py"], check=True)
+        
+        # Run ELEvoHI with error handling
+        try:
+            subprocess.run(["python", "ELEvoHI.py"], check=True)
+            #rename_output_folder(output_path, eventdate, HIobs, count)
+        except subprocess.CalledProcessError as e:
+            print(f"ELEvoHI failed for timestep {count}: {e}. Skipping to next iteration.")
         
         # Rename the output folder
         rename_output_folder(output_path, eventdate, HIobs, count)

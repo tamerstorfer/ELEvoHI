@@ -94,10 +94,14 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
 
 
     # Calculate the mean values for each element across tracks
-    mean_values = np.nanmean(interpolated_tracks, axis=0)
+    mean_values_inklnan = np.nanmean(interpolated_tracks, axis=0)
+    mean_values = mean_values_inklnan[np.isfinite(mean_values_inklnan)]
 
     # Calculate the standard deviations for each element across tracks
     std_values = np.nanstd(interpolated_tracks, axis=0)
+    std_values = std_values[np.isfinite(mean_values_inklnan)]
+    
+    new_time_axis = new_time_axis[np.isfinite(mean_values_inklnan)]
 
     # Calculate mean values by dividing by the number of files
     num_files = len(files)
@@ -437,14 +441,14 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 if silent == 0:
                     print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
                 # fit_ = fitdbm(xdata, gamma_fit)
-                fit_ = fitdbm(xdata,gamma_fit,vinit,swspeed,rinit)
+                fit_ = fitdbm(xdata, gamma_fit, vinit, swspeed, rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
                 residuals[i,:] = np.median(np.sqrt((ydata - fit_) ** 2 ))# * logistic_growth(ydata,k)/logistic_growth(ydata,k).max())
-                
+                fitspeed[i,:] = np.gradient(fit[i,:], xdata)
                 if silent == 0:
                     print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
-                fitspeed[i,:] = np.gradient(fit[i,:], xdata)
+                
                 if silent == 0:
                     print('-----')            
                     print('positive')
@@ -463,10 +467,10 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 gamma_fit = result.x[0]
                 if silent == 0:
                     print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
-                fit_ = fitdbmneg(xdata, gamma_fit)
+                fit_ = fitdbmneg(xdata, gamma_fit, vinit, swspeed, rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
-                residuals[i,:] = ydata - fit_
+                residuals[i,:] = np.median(np.sqrt((ydata - fit_) ** 2 ))
                 fitspeed[i,:] = np.gradient(fit[i,:], xdata)
                 if silent == 0:
                     print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
