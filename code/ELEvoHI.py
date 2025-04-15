@@ -66,9 +66,10 @@ def main():
     lead_time = None
     
     year = eventdate[:4]
-    event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
+    #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
     #event_path = '../../' + eventdate + '/'
+    event_path = '/Users/tanja/CME_Tracking/Enhanced/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
 
     # logging runnumbers for which no DBMfit converges

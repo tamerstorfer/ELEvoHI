@@ -425,7 +425,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         swspeed = winds[i]
         if vinit > swspeed:
             # Perform the optimization
-            result = minimize(cost_function, initial_guess,args=(vinit,swspeed,rinit,ydata,xdata), method='Nelder-Mead')
+            result = minimize(cost_function, initial_guess, args=(vinit,swspeed,rinit,ydata,xdata), method='Nelder-Mead')
             # gamma_fit, pcov = curve_fit(fitdbm, xdata, ydata,p0=initial_guess,method="dogbox")
             # Print the fitted parameter
             if silent == 0:
@@ -437,7 +437,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 if silent == 0:
                     print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
                 # fit_ = fitdbm(xdata, gamma_fit)
-                fit_ = fitdbm(xdata,gamma_fit,vinit,swspeed,rinit)
+                fit_ = fitdbm(xdata, gamma_fit, vinit, swspeed, rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
                 residuals[i,:] = np.median(np.sqrt((ydata - fit_) ** 2 ))# * logistic_growth(ydata,k)/logistic_growth(ydata,k).max())
@@ -463,7 +463,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 gamma_fit = result.x[0]
                 if silent == 0:
                     print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
-                fit_ = fitdbmneg(xdata, gamma_fit)
+                fit_ = fitdbmneg(xdata, gamma_fit, vinit, swspeed, rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
                 residuals[i,:] = ydata - fit_
