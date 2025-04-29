@@ -1,20 +1,20 @@
 {
 "basic_path": "../../",
-"track_path": "/Users/tanja/CME_Tracking/tracks/HCME_A_20210410_01",
-"tracklength": "timestep_14/",
-"eventdate": "20210410",
+"track_path": "/Users/tanja/CME_Tracking/tracks/HCME_A_20210529_01",
+"tracklength": "timestep_6/",
+"eventdate": "20210529",
 "HIobs": "A",
 "mode": "science",
 "do_ensemble": true,
-"phi_FPF": true,
+"phi_FPF": false,
 "phi_FPF_range": [
 10,
 10
 ],
 "phi_manual": [
-72,
-62,
-82
+114,
+104,
+124
 ],
 "phi_step": 2,
 "f": [
@@ -24,16 +24,16 @@
 ],
 "f_step": 0.1,
 "halfwidth": [
-45,
-35,
-55
+52,
+42,
+62
 ],
 "halfwidth_step": 5,
-"starttime": "2021-04-10 19:58",
-"endtime": "2021-04-13 13:58",
+"starttime": "2021-05-29 01:18",
+"endtime": "2021-05-30 13:18",
 "outer_system": false,
 "movie": false,
 "silent": true,
-"L1_ist_obs": "2021-04-15 03:28",
-"L1_isv_obs": 383
+"L1_ist_obs": "2021-06-02 12:20",
+"L1_isv_obs": 308
 }
