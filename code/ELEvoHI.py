@@ -64,15 +64,24 @@ def main():
     starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
     
     lead_time = None
-    ISSI = 0
-    L45 = 0
+    ISSI = True
+    L45 = True
     Ring = 0
     
     #HIobs = L5, L1, L4, R1, R2, R3, R4, R5, R6
     
+    if ISSI:
+        if eventdate == '20211028':
+            event = 'Event1'
+        if eventdate == '20201129':
+            event = 'Event2'
+        if eventdate == '20170910':
+            event = 'Event3'
+    
     year = eventdate[:4]
-    event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
+    #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
+    event_path = '/Users/tanja/ISSI_tomography/'+event+'/'+eventdate+'/' + HIobs + '/tracks/'
     #event_path = '../../' + eventdate + '/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
 
@@ -269,6 +278,27 @@ def main():
             if not L4_istime == None:
                 L4_istime = datetime.strptime(L4_istime, "%Y-%m-%d %H:%M")
             L4_isspeed = config.get('L4_isv_obs', np.nan)
+            
+            L1E10_istime = config.get('L1E10_ist_obs', None)
+            if not L1E10_istime == None:
+                L1E10_istime = datetime.strptime(L1E10_istime, "%Y-%m-%d %H:%M")
+            L1E10_isspeed = config.get('L1E10_isv_obs', np.nan)
+            
+            L1E20_istime = config.get('L1E20_ist_obs', None)
+            if not L1E20_istime == None:
+                L1E20_istime = datetime.strptime(L1E20_istime, "%Y-%m-%d %H:%M")
+            L1E20_isspeed = config.get('L1E20_isv_obs', np.nan)
+            
+            L1W10_istime = config.get('L1W10_ist_obs', None)
+            if not L1W10_istime == None:
+                L1W10_istime = datetime.strptime(L1W10_istime, "%Y-%m-%d %H:%M")
+            L1W10_isspeed = config.get('L1W10_isv_obs', np.nan)
+            
+            L1W20_istime = config.get('L1W20_ist_obs', None)
+            if not L1W20_istime == None:
+                L1W20_istime = datetime.strptime(L1W20_istime, "%Y-%m-%d %H:%M")
+            L1W20_isspeed = config.get('L1W20_isv_obs', np.nan)
+            
         
         if Ring:         
             R1_istime = config.get('R1_ist_obs', None)
@@ -336,53 +366,78 @@ def main():
         
         if L45:
             L5_r = 1.
-            L5_lon = -60.52656445
-            L5_lat = -7.11695757
+            L5_lon = np.deg2rad(-60.52656445)
+            L5_lat = np.deg2rad(-7.11695757)
             L5_available = 1
             
             L4_r = 1.
-            L4_lon = 59.41944299
-            L4_lat = 2.34933041
+            L4_lon = np.deg2rad(59.41944299)
+            L4_lat = np.deg2rad(2.34933041)
             L4_available = 1
 
             L1_r = 1.
-            L1_lon = -0.21187834
-            L1_lat = -4.75545600
+            L1_lon = np.deg2rad(-0.21187834)
+            L1_lat = np.deg2rad(-4.75545600)
             L1_available = 1
+            
+            L1E10_r = 1.
+            L1E10_lon = np.deg2rad(-0.21187834-10.)
+            L1E10_lat = np.deg2rad(-4.75545600)
+            L1E10_available = 1
+            
+            L1E20_r = 1.
+            L1E20_lon = np.deg2rad(-0.21187834-20.)
+            L1E20_lat = np.deg2rad(-4.75545600)
+            L1E20_available = 1
+            
+            L1W10_r = 1.
+            L1W10_lon = np.deg2rad(-0.21187834+10.)
+            L1W10_lat = np.deg2rad(-4.75545600)
+            L1W10_available = 1
+            
+            L1W20_r = 1.
+            L1W20_lon = np.deg2rad(-0.21187834+20.)
+            L1W20_lat = np.deg2rad(-4.75545600)
+            L1W20_available = 1
+                       
         else:
             L5_available = 0
             L4_available = 0
             L1_available = 0
+            L1E10_available = 0
+            L1E20_available = 0
+            L1W10_available = 0
+            L1W20_available = 0
 
         if Ring:         
             R1_r = 1.
-            R1_lon = -0.21187834
-            R1_lat = -4.75545600
+            R1_lon = np.deg2rad(-0.21187834)
+            R1_lat = np.deg2rad(-4.75545600)
             R1_available = 1
 
             R2_r = 1.
-            R2_lon = 19.71414499
-            R2_lat = -2.59890578
+            R2_lon = np.deg2rad(19.71414499)
+            R2_lat = np.deg2rad(-2.59890578)
             R2_available = 1
             
             R3_r = 1.
-            R3_lon = 119.47343555
-            R3_lat = 7.11695757
+            R3_lon = np.deg2rad(119.47343555)
+            R3_lat = np.deg2rad(7.11695757)
             R3_available = 1
             
             R4_r = 1.
-            R4_lon = 139.63131949
-            R4_lat = 7.16339432
+            R4_lon = np.deg2rad(139.63131949)
+            R4_lat = np.deg2rad(7.16339432)
             R4_available = 1
             
             R5_r = 1.
-            R5_lon = -120.58055701
-            R5_lat = -2.34933041
+            R5_lon = np.deg2rad(-120.58055701)
+            R5_lat = np.deg2rad(-2.34933041)
             R5_available = 1
             
             R6_r = 1.
-            R6_lon = -100.66445789
-            R6_lat = -4.55151774
+            R6_lon = np.deg2rad(-100.66445789)
+            R6_lat = np.deg2rad(-4.55151774)
             R6_available = 1
         else:
             R1_available = 0
@@ -617,111 +672,122 @@ def main():
             'mercury_r': mercury_r,
             'venus_r': venus_r,
             'earth_r': earth_r,
-            'mars_r': mars_r,
-
+            'mars_r': mars_r
         }
         
-        if ISSI:
-            if L45:
-                availability = {
-                    'L1_available': L1_available,
-                    'L4_available': L4_available,
-                    'L5_available': L5_available
-                }
-                positions = {
-                    'L1_lon': L1_lon,
-                    'L4_lon': mercury_lon,
-                    'L5_lon': venus_lon,
-                    'L1_r': L1_r,
-                    'L4_r': L4_r,
-                    'L5_r': L5_r
-                }
-            if Ring:
-                availability = {                
-                    'R1_available': R1_available,
-                    'R2_available': R2_available,
-                    'R3_available': R3_available,
-                    'R4_available': R4_available,
-                    'R5_available': R5_available,
-                    'R6_available': R6_available
-                }       
-                positions = {
-                    'R1_lon': earth_lon,
-                    'R2_lon': mars_lon,
-                    'R3_lon': R3_lon,
-                    'R4_lon': R4_lon,
-                    'R5_lon': R5_lon,
-                    'R6_lon': R6_lon,
-                    'R1_r': R1_r,
-                    'R2_r': R2_r,
-                    'R3_r': R3_r,
-                    'R4_r': R4_r,
-                    'R5_r': R5_r,
-                    'R6_r': R6_r
-                }
+    if ISSI:
+        if L45:
+            availability = {
+                'L1_available': L1_available,
+                'L4_available': L4_available,
+                'L5_available': L5_available,
+                'L1E10_available': L1E10_available,
+                'L1E20_available': L1E20_available,
+                'L1W10_available': L1W10_available,
+                'L1W20_available': L1W20_available
+            }
+            positions = {
+                'L1_lon': L1_lon,
+                'L4_lon': L4_lon,
+                'L5_lon': L5_lon,
+                'L1_r': L1_r,
+                'L4_r': L4_r,
+                'L5_r': L5_r,
+                'L1E10_lon': L1E10_lon,
+                'L1E20_lon': L1E20_lon,
+                'L1W10_lon': L1W10_lon,
+                'L1W20_lon': L1W20_lon,
+                'L1E10_r': L1E10_r,
+                'L1E20_r': L1E20_r,
+                'L1W10_r': L1W10_r,
+                'L1W20_r': L1W20_r
+            }
+        if Ring:
+            availability = {                
+                'R1_available': R1_available,
+                'R2_available': R2_available,
+                'R3_available': R3_available,
+                'R4_available': R4_available,
+                'R5_available': R5_available,
+                'R6_available': R6_available
+            }       
+            positions = {
+                'R1_lon': R1_lon,
+                'R2_lon': R2_lon,
+                'R3_lon': R3_lon,
+                'R4_lon': R4_lon,
+                'R5_lon': R5_lon,
+                'R6_lon': R6_lon,
+                'R1_r': R1_r,
+                'R2_r': R2_r,
+                'R3_r': R3_r,
+                'R4_r': R4_r,
+                'R5_r': R5_r,
+                'R6_r': R6_r
+            }
         
-        if not ISSI:       
-            if stb_available:
-                # New entry as a dictionary
-                add_stb = {'stb_lon': stb_lon,
-                    'stb_r': stb_r
-                }
-                # Adding the new entry using update()
-                positions.update(add_stb)
-            if sta_available:
-                # New entry as a dictionary
-                add_sta = {'sta_lon': sta_lon,
-                    'sta_r': sta_r
-                }
-                # Adding the new entry using update()
-                positions.update(add_sta)
-            if mes_available:
-                # New entry as a dictionary
-                add_mes = {'mes_lon': mes_lon,
-                    'mes_r': mes_r
-                }
-                # Adding the new entry using update()
-                positions.update(add_mes)
-            if vex_available:
-                # New entry as a dictionary
-                add_vex = {'vex_lon': vex_lon,
-                    'vex_r': vex_r
-                }
-                # Adding the new entry using update()
-                positions.update(add_vex) 
-            if solo_available:
-                # New entry as a dictionary
-                add_solo = {'solo_lon': solo_lon,
-                    'solo_r': solo_r
-                }
-                # Adding the new entry using update()
-                positions.update(add_solo)
-            if psp_available:
-                # New entry as a dictionary
-                add_psp = {'psp_lon': psp_lon,
-                    'psp_r': psp_r
-                }
-                # Adding the new entry using update()
-                positions.update(add_psp)  
-            if bepi_available:
-                # New entry as a dictionary
-                add_bepi = {'bepi_lon': bepi_lon,
-                    'bepi_r': bepi_r
-                }
-                # Adding the new entry using update()
-                positions.update(add_bepi)
-            if outer_system:
-                outer_planets = {'jupiter_r': jupiter_r,
-                                'saturn_r': saturn_r,
-                                'uranus_r': uranus_r,
-                                'neptune_r': neptune_r,
-                                'jupiter_lon': jupiter_lon,
-                                'saturn_lon': saturn_lon,
-                                'uranus_lon': uranus_lon,
-                                'neptune_lon': neptune_lon
-                }
-                positions.update(outer_planets)
-                
+    if not ISSI:       
+        if stb_available:
+            # New entry as a dictionary
+            add_stb = {'stb_lon': stb_lon,
+                'stb_r': stb_r
+            }
+            # Adding the new entry using update()
+            positions.update(add_stb)
+        if sta_available:
+            # New entry as a dictionary
+            add_sta = {'sta_lon': sta_lon,
+                'sta_r': sta_r
+            }
+            # Adding the new entry using update()
+            positions.update(add_sta)
+        if mes_available:
+            # New entry as a dictionary
+            add_mes = {'mes_lon': mes_lon,
+                'mes_r': mes_r
+            }
+            # Adding the new entry using update()
+            positions.update(add_mes)
+        if vex_available:
+            # New entry as a dictionary
+            add_vex = {'vex_lon': vex_lon,
+                'vex_r': vex_r
+            }
+            # Adding the new entry using update()
+            positions.update(add_vex) 
+        if solo_available:
+            # New entry as a dictionary
+            add_solo = {'solo_lon': solo_lon,
+                'solo_r': solo_r
+            }
+            # Adding the new entry using update()
+            positions.update(add_solo)
+        if psp_available:
+            # New entry as a dictionary
+            add_psp = {'psp_lon': psp_lon,
+                'psp_r': psp_r
+            }
+            # Adding the new entry using update()
+            positions.update(add_psp)  
+        if bepi_available:
+            # New entry as a dictionary
+            add_bepi = {'bepi_lon': bepi_lon,
+                'bepi_r': bepi_r
+            }
+            # Adding the new entry using update()
+            positions.update(add_bepi)
+        if outer_system:
+            outer_planets = {'jupiter_r': jupiter_r,
+                            'saturn_r': saturn_r,
+                            'uranus_r': uranus_r,
+                            'neptune_r': neptune_r,
+                            'jupiter_lon': jupiter_lon,
+                            'saturn_lon': saturn_lon,
+                            'uranus_lon': uranus_lon,
+                            'neptune_lon': neptune_lon
+            }
+            positions.update(outer_planets)
+            
         ############################################################################   
         # calculate angular separation of CME apex from each target
 
@@ -801,189 +867,213 @@ def main():
                 else:
                     direction = stb_lon + phi
                     
-            ############################################################################   
-            # calculate angular separation of CME apex from each target
-            
-            if ISSI:
-                if L45:
-                    if abs(direction) + abs(L1_lon) < np.pi:
-                        delta_L1 = direction - L1_lon
-                    else:
-                        delta_L1 = direction - (L1_lon + 2 * np.pi * np.sign(direction))
-                        
-                    if abs(direction) + abs(L5_lon) < np.pi:
-                        delta_L5 = direction - L5_lon
-                    else:
-                        delta_L5 = direction - (L5_lon + 2 * np.pi * np.sign(direction))    
-                        
-                    if abs(direction) + abs(L4_lon) < np.pi:
-                        delta_L4 = direction - L4_lon
-                    else:
-                        delta_L4 = direction - (L4_lon + 2 * np.pi * np.sign(direction)) 
-                    
-                    delta_values = {
-                        'delta_L1': delta_L1,
-                        'delta_L4': delta_L4,
-                        'delta_L5': delta_L5
-                        }
-                
-                if Ring:   
-                    if abs(direction) + abs(R1_lon) < np.pi:
-                        delta_R1 = direction - R1_lon
-                    else:
-                        delta_R1 = direction - (R1_lon + 2 * np.pi * np.sign(direction))    
-                        
-                    if abs(direction) + abs(R2_lon) < np.pi:
-                        delta_R2 = direction - R2_lon
-                    else:
-                        delta_R2 = direction - (R2_lon + 2 * np.pi * np.sign(direction))   
-                        
-                    if abs(direction) + abs(R3_lon) < np.pi:
-                        delta_R3 = direction - R3_lon
-                    else:
-                        delta_R3 = direction - (R3_lon + 2 * np.pi * np.sign(direction))  
-                         
-                    if abs(direction) + abs(R4_lon) < np.pi:
-                        delta_R4 = direction - R4_lon
-                    else:
-                        delta_R4 = direction - (R4_lon + 2 * np.pi * np.sign(direction))   
-                        
-                    if abs(direction) + abs(R5_lon) < np.pi:
-                        delta_R5 = direction - R5_lon
-                    else:
-                        delta_R5 = direction - (R5_lon + 2 * np.pi * np.sign(direction))   
-                                                
-                    if abs(direction) + abs(R6_lon) < np.pi:
-                        delta_R6 = direction - R6_lon
-                    else:
-                        delta_R6 = direction - (R6_lon + 2 * np.pi * np.sign(direction)) 
-                        
-                    delta_values = {
-                        'delta_R1': delta_R1,
-                        'delta_R2': delta_R2,
-                        'delta_R3': delta_R3,
-                        'delta_R4': delta_R4,
-                        'delta_R5': delta_R5,
-                        'delta_R6': delta_R6
-                        }
-                    
-            else:                       
-                if abs(direction) + abs(mars_lon) < np.pi:
-                    delta_mars = direction - mars_lon
-                else:
-                    delta_mars = direction - (mars_lon + 2 * np.pi * np.sign(direction))
-
-                if abs(direction) + abs(venus_lon) < np.pi:
-                    delta_venus = direction - venus_lon
-                else:
-                    delta_venus = direction - (venus_lon + 2 * np.pi * np.sign(direction))
-
-                if abs(direction) + abs(mercury_lon) < np.pi:
-                    delta_mercury = direction - mercury_lon
-                else:
-                    delta_mercury = direction - (mercury_lon + 2 * np.pi * np.sign(direction))
-                    
+        ############################################################################   
+        # calculate angular separation of CME apex from each target
+        
+        if ISSI:
+            if L45:
                 if abs(direction) + abs(L1_lon) < np.pi:
                     delta_L1 = direction - L1_lon
                 else:
                     delta_L1 = direction - (L1_lon + 2 * np.pi * np.sign(direction))
-
-                if abs(direction) + abs(earth_lon) < np.pi:
-                    delta_earth = direction - earth_lon
+                    
+                if abs(direction) + abs(L5_lon) < np.pi:
+                    delta_L5 = direction - L5_lon
                 else:
-                    delta_earth = direction - (earth_lon + 2 * np.pi * np.sign(direction))
-
+                    delta_L5 = direction - (L5_lon + 2 * np.pi * np.sign(direction))    
+                    
+                if abs(direction) + abs(L4_lon) < np.pi:
+                    delta_L4 = direction - L4_lon
+                else:
+                    delta_L4 = direction - (L4_lon + 2 * np.pi * np.sign(direction)) 
+                
+                if abs(direction) + abs(L1E10_lon) < np.pi:
+                    delta_L1E10 = direction - L1E10_lon
+                else:
+                    delta_L1E10 = direction - (L1E10_lon + 2 * np.pi * np.sign(direction))
+                
+                if abs(direction) + abs(L1E20_lon) < np.pi:
+                    delta_L1E20 = direction - L1E20_lon
+                else:
+                    delta_L1E20 = direction - (L1E20_lon + 2 * np.pi * np.sign(direction))
+                
+                if abs(direction) + abs(L1W10_lon) < np.pi:
+                    delta_L1W10 = direction - L1W10_lon
+                else:
+                    delta_L1W10 = direction - (L1W10_lon + 2 * np.pi * np.sign(direction))
+                
+                if abs(direction) + abs(L1W20_lon) < np.pi:
+                    delta_L1W20 = direction - L1W20_lon
+                else:
+                    delta_L1W20 = direction - (L1W20_lon + 2 * np.pi * np.sign(direction))
+                
                 delta_values = {
                     'delta_L1': delta_L1,
-                    'delta_mercury': delta_mercury,
-                    'delta_venus': delta_venus,
-                    'delta_earth': delta_earth,
-                    'delta_mars': delta_mars,
-                }
-
-                if sta_available:
-                    if abs(direction) + abs(sta_lon) < np.pi:
-                        delta_sta = direction - sta_lon
-                        # New entry as a dictionary
-                    else:
-                        delta_sta = direction - (sta_lon + 2 * np.pi * np.sign(direction))
-                    add_sta = {'delta_sta': delta_sta}
-                    delta_values.update(add_sta)
-
-                if psp_available:
-                    if abs(direction) + abs(psp_lon) < np.pi:
-                        delta_psp = direction - psp_lon
-                    else:
-                        delta_psp = direction - (psp_lon + 2 * np.pi * np.sign(direction))
-                    add_psp = {'delta_psp': delta_psp}
-                    delta_values.update(add_psp)
-
-                if solo_available:
-                    if abs(direction) + abs(solo_lon) < np.pi:
-                        delta_solo = direction - solo_lon
-                    else:
-                        delta_solo = direction - (solo_lon + 2 * np.pi * np.sign(direction))
-                    add_solo = {'delta_solo': delta_solo}
-                    delta_values.update(add_solo)
-
-                if bepi_available:
-                    if abs(direction) + abs(bepi_lon) < np.pi:
-                        delta_bepi = direction - bepi_lon
-                    else:
-                        delta_bepi = direction - (bepi_lon + 2 * np.pi * np.sign(direction))
-                    add_bepi = {'delta_bepi': delta_bepi}
-                    delta_values.update(add_bepi)
-
-                if stb_available:
-                    if abs(direction) + abs(stb_lon) < np.pi:
-                        delta_stb = direction - stb_lon
-                    else:
-                        delta_stb = direction - (stb_lon + 2 * np.pi * np.sign(direction))
-                    add_stb = {'delta_stb': delta_stb}
-                    delta_values.update(add_stb)
-
-                if vex_available:
-                    if abs(direction) + abs(vex_lon) < np.pi:
-                        delta_vex = direction - vex_lon
-                    else:
-                        delta_vex = direction - (vex_lon + 2 * np.pi * np.sign(direction))
-                    add_vex = {'delta_vex': delta_vex}
-                    delta_values.update(add_vex)
+                    'delta_L4': delta_L4,
+                    'delta_L5': delta_L5,
+                    'delta_L1E10': delta_L1E10,
+                    'delta_L1E20': delta_L1E20,
+                    'delta_L1W10': delta_L1W10,
+                    'delta_L1W20': delta_L1W20
+                    }
+            
+            if Ring:   
+                if abs(direction) + abs(R1_lon) < np.pi:
+                    delta_R1 = direction - R1_lon
+                else:
+                    delta_R1 = direction - (R1_lon + 2 * np.pi * np.sign(direction))    
+                    
+                if abs(direction) + abs(R2_lon) < np.pi:
+                    delta_R2 = direction - R2_lon
+                else:
+                    delta_R2 = direction - (R2_lon + 2 * np.pi * np.sign(direction))   
+                    
+                if abs(direction) + abs(R3_lon) < np.pi:
+                    delta_R3 = direction - R3_lon
+                else:
+                    delta_R3 = direction - (R3_lon + 2 * np.pi * np.sign(direction))  
                         
-                if mes_available:
-                    if abs(direction) + abs(mes_lon) < np.pi:
-                        delta_mes = direction - mes_lon
-                    else:
-                        delta_mes = direction - (mes_lon + 2 * np.pi * np.sign(direction))
-                    add_mes = {'delta_mes': delta_mes}
-                    delta_values.update(add_mes)
+                if abs(direction) + abs(R4_lon) < np.pi:
+                    delta_R4 = direction - R4_lon
+                else:
+                    delta_R4 = direction - (R4_lon + 2 * np.pi * np.sign(direction))   
+                    
+                if abs(direction) + abs(R5_lon) < np.pi:
+                    delta_R5 = direction - R5_lon
+                else:
+                    delta_R5 = direction - (R5_lon + 2 * np.pi * np.sign(direction))   
+                                            
+                if abs(direction) + abs(R6_lon) < np.pi:
+                    delta_R6 = direction - R6_lon
+                else:
+                    delta_R6 = direction - (R6_lon + 2 * np.pi * np.sign(direction)) 
+                    
+                delta_values = {
+                    'delta_R1': delta_R1,
+                    'delta_R2': delta_R2,
+                    'delta_R3': delta_R3,
+                    'delta_R4': delta_R4,
+                    'delta_R5': delta_R5,
+                    'delta_R6': delta_R6
+                    }
+                
+        else:                       
+            if abs(direction) + abs(mars_lon) < np.pi:
+                delta_mars = direction - mars_lon
+            else:
+                delta_mars = direction - (mars_lon + 2 * np.pi * np.sign(direction))
 
-                if outer_system == 1:
-                    if abs(direction) + abs(jupiter_lon) < np.pi:
-                        delta_jupiter = direction - jupiter_lon
-                    else:
-                        delta_jupiter = direction - (jupiter_lon + 2 * np.pi * np.sign(direction))
+            if abs(direction) + abs(venus_lon) < np.pi:
+                delta_venus = direction - venus_lon
+            else:
+                delta_venus = direction - (venus_lon + 2 * np.pi * np.sign(direction))
 
-                    if abs(direction) + abs(saturn_lon) < np.pi:
-                        delta_saturn = direction - saturn_lon
-                    else:
-                        delta_saturn = direction - (saturn_lon + 2 * np.pi * np.sign(direction))
+            if abs(direction) + abs(mercury_lon) < np.pi:
+                delta_mercury = direction - mercury_lon
+            else:
+                delta_mercury = direction - (mercury_lon + 2 * np.pi * np.sign(direction))
+                
+            if abs(direction) + abs(L1_lon) < np.pi:
+                delta_L1 = direction - L1_lon
+            else:
+                delta_L1 = direction - (L1_lon + 2 * np.pi * np.sign(direction))
 
-                    if abs(direction) + abs(uranus_lon) < np.pi:
-                        delta_uranus = direction - uranus_lon
-                    else:
-                        delta_uranus = direction - (uranus_lon + 2 * np.pi * np.sign(direction))
-                        
-                    if abs(direction) + abs(neptune_lon) < np.pi:
-                        delta_neptune = direction - neptune_lon
-                    else:
-                        delta_neptune = direction - (neptune_lon + 2 * np.pi * np.sign(direction))
-                    delta_outer = {
-                        'delta_jupiter': delta_jupiter,
-                        'delta_saturn': delta_saturn,
-                        'delta_uranus': delta_uranus,
-                        'delta_neptune': delta_neptune}
-                    delta_values.update(delta_outer)
+            if abs(direction) + abs(earth_lon) < np.pi:
+                delta_earth = direction - earth_lon
+            else:
+                delta_earth = direction - (earth_lon + 2 * np.pi * np.sign(direction))
+
+            delta_values = {
+                'delta_L1': delta_L1,
+                'delta_mercury': delta_mercury,
+                'delta_venus': delta_venus,
+                'delta_earth': delta_earth,
+                'delta_mars': delta_mars,
+            }
+
+            if sta_available:
+                if abs(direction) + abs(sta_lon) < np.pi:
+                    delta_sta = direction - sta_lon
+                    # New entry as a dictionary
+                else:
+                    delta_sta = direction - (sta_lon + 2 * np.pi * np.sign(direction))
+                add_sta = {'delta_sta': delta_sta}
+                delta_values.update(add_sta)
+
+            if psp_available:
+                if abs(direction) + abs(psp_lon) < np.pi:
+                    delta_psp = direction - psp_lon
+                else:
+                    delta_psp = direction - (psp_lon + 2 * np.pi * np.sign(direction))
+                add_psp = {'delta_psp': delta_psp}
+                delta_values.update(add_psp)
+
+            if solo_available:
+                if abs(direction) + abs(solo_lon) < np.pi:
+                    delta_solo = direction - solo_lon
+                else:
+                    delta_solo = direction - (solo_lon + 2 * np.pi * np.sign(direction))
+                add_solo = {'delta_solo': delta_solo}
+                delta_values.update(add_solo)
+
+            if bepi_available:
+                if abs(direction) + abs(bepi_lon) < np.pi:
+                    delta_bepi = direction - bepi_lon
+                else:
+                    delta_bepi = direction - (bepi_lon + 2 * np.pi * np.sign(direction))
+                add_bepi = {'delta_bepi': delta_bepi}
+                delta_values.update(add_bepi)
+
+            if stb_available:
+                if abs(direction) + abs(stb_lon) < np.pi:
+                    delta_stb = direction - stb_lon
+                else:
+                    delta_stb = direction - (stb_lon + 2 * np.pi * np.sign(direction))
+                add_stb = {'delta_stb': delta_stb}
+                delta_values.update(add_stb)
+
+            if vex_available:
+                if abs(direction) + abs(vex_lon) < np.pi:
+                    delta_vex = direction - vex_lon
+                else:
+                    delta_vex = direction - (vex_lon + 2 * np.pi * np.sign(direction))
+                add_vex = {'delta_vex': delta_vex}
+                delta_values.update(add_vex)
+                    
+            if mes_available:
+                if abs(direction) + abs(mes_lon) < np.pi:
+                    delta_mes = direction - mes_lon
+                else:
+                    delta_mes = direction - (mes_lon + 2 * np.pi * np.sign(direction))
+                add_mes = {'delta_mes': delta_mes}
+                delta_values.update(add_mes)
+
+            if outer_system == 1:
+                if abs(direction) + abs(jupiter_lon) < np.pi:
+                    delta_jupiter = direction - jupiter_lon
+                else:
+                    delta_jupiter = direction - (jupiter_lon + 2 * np.pi * np.sign(direction))
+
+                if abs(direction) + abs(saturn_lon) < np.pi:
+                    delta_saturn = direction - saturn_lon
+                else:
+                    delta_saturn = direction - (saturn_lon + 2 * np.pi * np.sign(direction))
+
+                if abs(direction) + abs(uranus_lon) < np.pi:
+                    delta_uranus = direction - uranus_lon
+                else:
+                    delta_uranus = direction - (uranus_lon + 2 * np.pi * np.sign(direction))
+                    
+                if abs(direction) + abs(neptune_lon) < np.pi:
+                    delta_neptune = direction - neptune_lon
+                else:
+                    delta_neptune = direction - (neptune_lon + 2 * np.pi * np.sign(direction))
+                delta_outer = {
+                    'delta_jupiter': delta_jupiter,
+                    'delta_saturn': delta_saturn,
+                    'delta_uranus': delta_uranus,
+                    'delta_neptune': delta_neptune}
+                delta_values.update(delta_outer)
                 
         #####################################################################################
         # print deltas for each target and check for hits
@@ -993,24 +1083,54 @@ def main():
                 print('Delta(CME apex, L1): ', np.rad2deg(delta_L1))
                 print('Delta(CME apex, L4): ', np.rad2deg(delta_L4))
                 print('Delta(CME apex, L5): ', np.rad2deg(delta_L5))
+                print('Delta(CME apex, L1E10): ', np.rad2deg(delta_L1E10))
+                print('Delta(CME apex, L1E20): ', np.rad2deg(delta_L1E20))
+                print('Delta(CME apex, L1W10): ', np.rad2deg(delta_L1W10))
+                print('Delta(CME apex, L1W20): ', np.rad2deg(delta_L1W20))
                 
                 if round(np.rad2deg(np.abs(delta_L1)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_L1 = 1
                 else:
                     hit_L1 = 0
+                    
                 if round(np.rad2deg(np.abs(delta_L4)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_L4 = 1
                 else:
                     hit_L4 = 0
+                    
                 if round(np.rad2deg(np.abs(delta_L5)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_L5 = 1
                 else:
                     hit_L5 = 0  
                     
+                if round(np.rad2deg(np.abs(delta_L1E10)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1E10 = 1
+                else:
+                    hit_L1E10 = 0
+                    
+                if round(np.rad2deg(np.abs(delta_L1E20)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1E20 = 1
+                else:
+                    hit_L1E20 = 0
+                    
+                if round(np.rad2deg(np.abs(delta_L1W10)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1W10 = 1
+                else:
+                    hit_L1W10 = 0
+                    
+                if round(np.rad2deg(np.abs(delta_L1W20)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1W20 = 1
+                else:
+                    hit_L1W20 = 0
+                    
                 hit_counts = {
                     'hit_L1': hit_L1,
                     'hit_L4': hit_L4,
-                    'hit_L5': hit_L5
+                    'hit_L5': hit_L5,
+                    'hit_L1E10': hit_L1E10,
+                    'hit_L1E20': hit_L1E20,
+                    'hit_L1W10': hit_L1W10,
+                    'hit_L1W20': hit_L1W20 
                 } 
                    
             if Ring:
@@ -1223,6 +1343,8 @@ def main():
                     'hit_neptune': hit_neptune
                 }
         
+        #pdb.set_trace()
+        
         if not do_ensemble:
             det_plot = True
         else:   
@@ -1305,7 +1427,7 @@ def main():
         
         R = rdrag /AU
 
-        prediction = elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, movie=movie, timegrid=timegrid)
+        prediction = elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, ISSI, L45=L45, Ring=Ring, movie=movie, timegrid=timegrid)
         
         if accsign < 0:
             print('')
@@ -1331,6 +1453,10 @@ def main():
             target_L1_present = prediction['target'] == 'L1'
             target_L4_present = prediction['target'] == 'L4'
             target_L5_present = prediction['target'] == 'L5'
+            target_L1E10_present = prediction['target'] == 'L1E10'
+            target_L1E20_present = prediction['target'] == 'L1E20'
+            target_L1W10_present = prediction['target'] == 'L1W10'
+            target_L1W20_present = prediction['target'] == 'L1W20'
             target_R1_present = prediction['target'] == 'R1'
             target_R2_present = prediction['target'] == 'R2'
             target_R3_present = prediction['target'] == 'R3'
@@ -1341,6 +1467,23 @@ def main():
             if target_L1_present.any():
                 dt_L1, dv_L1, prediction = assess_prediction(prediction, 'L1', L1_istime, L1_isspeed)
                 any_dt_present = True
+                
+            if target_L1E10_present.any():
+                dt_L1E10, dv_L1E10, prediction = assess_prediction(prediction, 'L1E10', L1E10_istime, L1E10_isspeed)
+                any_dt_present = True
+                
+            if target_L1E20_present.any():
+                dt_L1E20, dv_L1E20, prediction = assess_prediction(prediction, 'L1E20', L1E20_istime, L1E20_isspeed)
+                any_dt_present = True
+                
+            if target_L1W10_present.any():
+                dt_L1W10, dv_L1W10, prediction = assess_prediction(prediction, 'L1W10', L1W10_istime, L1W10_isspeed)
+                any_dt_present = True
+                
+            if target_L1W20_present.any():
+                dt_L1W20, dv_L1W20, prediction = assess_prediction(prediction, 'L1W20', L1W20_istime, L1W20_isspeed)
+                any_dt_present = True
+                
             if target_R1_present.any():
                 dt_R1, dv_R1, prediction = assess_prediction(prediction, 'R1', R1_istime, R1_isspeed)
                 any_dt_present = True          
@@ -1432,7 +1575,7 @@ def main():
             tmp_ensemble = pd.DataFrame()
             tmp_ensemble['run no.'] = [int(runnumber)] * len(prediction)
             tmp_ensemble['target'] = prediction['target']
-            tmp_ensemble['apex direction (HEE)'] = round(np.rad2deg(delta_earth))
+            tmp_ensemble['apex direction (HEE)'] = round(np.rad2deg(delta_L1))
             tmp_ensemble['phi [° from HI observer]'] = round(np.rad2deg(phi))
             tmp_ensemble['halfwidth [°]'] = round(np.rad2deg(halfwidth))
             tmp_ensemble['inv. aspect ratio'] = round(f, 1)
@@ -1555,6 +1698,10 @@ def main():
                     print('        Median Arrival Time [UT]: ', ensemble_results['arrival time (median) [UT]'].iloc[i], '+/-', ensemble_results['arrival time (std dev) [h]'].iloc[i], ' hours')
                     print('        Mean Arrival Speed: ', ensemble_results['arrival speed (mean) [km/s]'].iloc[i], '+/-', ensemble_results['arrival speed (std dev) [km/s]'].iloc[i], 'km/s')
                     print('       --------')
+                    print('        dt (deterministic run): ', ensemble_results['dt (det)'].iloc[i], 'hours')
+                    print('        dv (deterministic run): ', ensemble_results['dv (det)'].iloc[i], 'km/s')
+                    print('        dt (mean run): ', ensemble_results['dt (mean)'].iloc[i], 'hours')
+                    print('        dv (mean run): ', ensemble_results['dv (mean)'].iloc[i], 'km/s')
                 print('Ensemble size: ', num_points_phi * num_points_f * num_points_lambda)
                 print('Deterministic run ist run number', det_run_no)
         

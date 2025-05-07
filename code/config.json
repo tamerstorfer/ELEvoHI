@@ -1,7 +1,7 @@
 {
     "basic_path": "../../",
-    "eventdate": "20170910",
-    "HIobs": "L5",
+    "eventdate": "20201129",
+    "HIobs": "L1w",
     "mode": "science",
     "do_ensemble": true,
     "phi_FPF": false,
@@ -10,9 +10,9 @@
     10
     ],
     "phi_manual": [
-    72,
-    62,
-    82
+    6,
+    -4,
+    16
     ],
     "phi_step": 2,
     "f": [
@@ -22,16 +22,24 @@
     ],
     "f_step": 0.1,
     "halfwidth": [
-    52,
-    42,
-    62
+    49,
+    39,
+    59
     ],
     "halfwidth_step": 5,
-    "starttime":"2017-09-10 16:44",
-    "endtime":"2017-09-12 11:58",
+    "starttime":"2020-11-29 16:19",
+    "endtime":"2020-12-01 14:11",
     "outer_system": false,
     "movie": false,
     "silent": true,
-    "L1_ist_obs": "2017-09-12 18:31",
-    "L1_isv_obs": 440
+    "L1_ist_obs": "2020-12-02 09:00",
+    "L1_isv_obs": 404,
+    "L1E10_ist_obs": "2020-12-02 02:00",
+    "L1E10_isv_obs": 402,
+    "L1E20_ist_obs": "2020-12-01 23:00",
+    "L1E20_isv_obs": 451,
+    "L1W10_ist_obs": "2020-12-02 16:01",
+    "L1W10_isv_obs": 363,
+    "L1W20_ist_obs": "2020-12-02 22:00",
+    "L1W20_isv_obs": 359
     }

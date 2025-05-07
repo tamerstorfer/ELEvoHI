@@ -437,7 +437,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 if silent == 0:
                     print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
                 # fit_ = fitdbm(xdata, gamma_fit)
-                fit_ = fitdbm(xdata,gamma_fit,vinit,swspeed,rinit)
+                fit_ = fitdbm(xdata, gamma_fit, vinit, swspeed, rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
                 residuals[i,:] = np.median(np.sqrt((ydata - fit_) ** 2 ))# * logistic_growth(ydata,k)/logistic_growth(ydata,k).max())
@@ -463,7 +463,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
                 gamma_fit = result.x[0]
                 if silent == 0:
                     print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
-                fit_ = fitdbmneg(xdata, gamma_fit)
+                fit_ = fitdbmneg(xdata, gamma_fit, vinit,swspeed,rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
                 residuals[i,:] = ydata - fit_
@@ -552,7 +552,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         
         # Use fixed y-axis limits
         y_lower = 0
-        y_upper = 1200
+        y_upper = 2400
 
         # Set the y-axis limits
         ax.set_ylim(y_lower, y_upper)
@@ -682,104 +682,183 @@ def elevo_analytic(R, f, halfwidth, delta, runnumber, out=False, plot=False):
             print('distance d in AU: ', dvalue)
         return dvalue
    
-def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, movie=False, timegrid = 1440):
+def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, ISSI, L45=False, Ring=False, movie=False, timegrid = 1440):
     # calculate ELEvo radial distances in direction of each target and
     # arrival times and speeds
     
-    # Assign values from dictionary to variables
-    sta_available = availability['sta_available']
-    stb_available = availability['stb_available']
-    mes_available = availability['mes_available']
-    vex_available = availability['vex_available']
-    solo_available = availability['solo_available']
-    psp_available = availability['psp_available']
-    bepi_available = availability['bepi_available']
-    
-    hit_sta = hit_counts['hit_sta']
-    hit_stb = hit_counts['hit_stb']
-    hit_mes = hit_counts['hit_mes']    
-    hit_vex = hit_counts['hit_vex']
-    hit_solo = hit_counts['hit_solo']
-    hit_psp = hit_counts['hit_psp']
-    hit_bepi = hit_counts['hit_bepi']
-    hit_L1 = hit_counts['hit_L1']
-    hit_mercury = hit_counts['hit_mercury']
-    hit_venus = hit_counts['hit_venus']
-    hit_earth = hit_counts['hit_earth']
-    hit_mars = hit_counts['hit_mars']
-    
-    if outer_system:
-        hit_jupiter = hit_counts['hit_jupiter']
-        hit_saturn = hit_counts['hit_saturn']
-        hit_uranus = hit_counts['hit_uranus']
-        hit_neptune = hit_counts['hit_neptune']
-        delta_jupiter = delta_values['delta_jupiter']
-        delta_saturn = delta_values['delta_saturn']
-        delta_uranus = delta_values['delta_uranus']
-        delta_neptune = delta_values['delta_neptune']
-    
-    if sta_available:
-        delta_sta = delta_values['delta_sta']
-    if stb_available:
-        delta_stb = delta_values['delta_stb']
-    if mes_available:
-        delta_mes = delta_values['delta_mes']
-    if vex_available:
-        delta_vex = delta_values['delta_vex']
-    if psp_available:
-        delta_psp = delta_values['delta_psp']
-    if solo_available:
-        delta_solo = delta_values['delta_solo']
-    if bepi_available:
-        delta_bepi = delta_values['delta_bepi']
+    if ISSI:
+        if L45:            
+            L1_available = availability['L1_available']
+            L1E10_available = availability['L1E10_available']
+            L1E20_available = availability['L1E20_available']
+            L1W10_available = availability['L1W10_available']
+            L1W20_available = availability['L1W20_available']
+            L4_available = availability['L4_available']
+            L5_available = availability['L5_available']
+            
+            L1_r = positions['L1_r']
+            L1E10_r = positions['L1E10_r']
+            L1E20_r = positions['L1E20_r']
+            L1W10_r = positions['L1W10_r']
+            L1W20_r = positions['L1W20_r']
+            L4_r = positions['L4_r']
+            L5_r = positions['L5_r']
+            
+            L1_lon = positions['L1_lon']
+            L1E10_lon = positions['L1E10_lon']
+            L1E20_lon = positions['L1E20_lon']
+            L1W10_lon = positions['L1W10_lon']
+            L1W20_lon = positions['L1W20_lon']
+            L4_lon = positions['L4_lon']
+            L5_lon = positions['L5_lon']
+            
+            
+            delta_L1 = delta_values['delta_L1']
+            delta_L1E10 = delta_values['delta_L1E10']
+            delta_L1E20 = delta_values['delta_L1E20']
+            delta_L1W10 = delta_values['delta_L1W10']
+            delta_L1W20 = delta_values['delta_L1W20']
+            delta_L4 = delta_values['delta_L4']
+            delta_L5 = delta_values['delta_L5']
+            
+            hit_L1 = hit_counts['hit_L1']
+            hit_L1E10 = hit_counts['hit_L1E10']
+            hit_L1E20 = hit_counts['hit_L1E20']
+            hit_L1W10 = hit_counts['hit_L1W10']
+            hit_L1W20 = hit_counts['hit_L1W20']
+            hit_L4 = hit_counts['hit_L4']
+            hit_L5 = hit_counts['hit_L5']  
+        if Ring:
+            R1_available = availability['R1_available']
+            R2_available = availability['R2_available']
+            R3_available = availability['R3_available']
+            R4_available = availability['R4_available']
+            R5_available = availability['R5_available']
+            R6_available = availability['R6_available']
+            R1_r = positions['R1_r']
+            R2_r = positions['R2_r']
+            R3_r = positions['R3_r']
+            R4_r = positions['R4_r']
+            R5_r = positions['R5_r']
+            R6_r = positions['R6_r']
+            R1_lon = positions['R1_lon']
+            R2_lon = positions['R2_lon']
+            R3_lon = positions['R3_lon']
+            R4_lon = positions['R4_lon']
+            R5_lon = positions['R5_lon']
+            R6_lon = positions['R6_lon']
         
-    delta_L1 = delta_values['delta_L1']
-    delta_mercury = delta_values['delta_mercury']
-    delta_venus = delta_values['delta_venus']
-    delta_earth = delta_values['delta_earth']
-    delta_mars = delta_values['delta_mars']
-      
-    mars_r = positions['mars_r']
-    earth_r = positions['earth_r']
-    venus_r = positions['venus_r']
-    mercury_r = positions['mercury_r']
-    L1_r = positions['L1_r']
-    mars_lon = positions['mars_lon']
-    earth_lon = positions['earth_lon']
-    venus_lon = positions['venus_lon']
-    mercury_lon = positions['mercury_lon']
-    L1_lon = positions['L1_lon']
-    
-    if sta_available:
-        sta_r = positions['sta_r']
-        sta_lon = positions['sta_lon']        
-    if stb_available:
-        stb_r = positions['stb_r']
-        stb_lon = positions['stb_lon']    
-    if bepi_available:   
-        bepi_r = positions['bepi_r']
-        bepi_lon = positions['bepi_lon']    
-    if solo_available:
-        solo_r = positions['solo_r']
-        solo_lon = positions['solo_lon']
-    if psp_available:
-        psp_r = positions['psp_r']
-        psp_lon = positions['psp_lon']
-    if vex_available:
-        vex_r = positions['vex_r']
-        vex_lon = positions['vex_lon']
-    if mes_available:
-        mes_r = positions['mes_r']
-        mes_lon = positions['mes_lon']
-    if outer_system:
-        neptune_r = positions['neptune_r']
-        uranus_r = positions['uranus_r']
-        saturn_r = positions['saturn_r']
-        jupiter_r = positions['jupiter_r']
-        neptune_lon = positions['neptune_lon']
-        uranus_lon = positions['uranus_lon']
-        saturn_lon = positions['saturn_lon']
-        jupiter_lon = positions['jupiter_lon']
+            delta_R1 = delta_values['delta_R1']
+            delta_R2 = delta_values['delta_R2']
+            delta_R3 = delta_values['delta_R3']
+            delta_R4 = delta_values['delta_R4']
+            delta_R5 = delta_values['delta_R5']
+            delta_R6 = delta_values['delta_R6']
+            
+            hit_R1 = hit_counts['hit_R1']
+            hit_R2 = hit_counts['hit_R2']
+            hit_R3 = hit_counts['hit_R3']
+            hit_R4 = hit_counts['hit_R4']
+            hit_R5 = hit_counts['hit_R5']
+            hit_R6 = hit_counts['hit_R6']
+
+
+    if not ISSI:
+        
+        # Assign values from dictionary to variables
+        sta_available = availability['sta_available']
+        stb_available = availability['stb_available']
+        mes_available = availability['mes_available']
+        vex_available = availability['vex_available']
+        solo_available = availability['solo_available']
+        psp_available = availability['psp_available']
+        bepi_available = availability['bepi_available']
+        
+        hit_sta = hit_counts['hit_sta']
+        hit_stb = hit_counts['hit_stb']
+        hit_mes = hit_counts['hit_mes']    
+        hit_vex = hit_counts['hit_vex']
+        hit_solo = hit_counts['hit_solo']
+        hit_psp = hit_counts['hit_psp']
+        hit_bepi = hit_counts['hit_bepi']
+        hit_L1 = hit_counts['hit_L1']
+        hit_mercury = hit_counts['hit_mercury']
+        hit_venus = hit_counts['hit_venus']
+        hit_earth = hit_counts['hit_earth']
+        hit_mars = hit_counts['hit_mars']
+        
+        if outer_system:
+            hit_jupiter = hit_counts['hit_jupiter']
+            hit_saturn = hit_counts['hit_saturn']
+            hit_uranus = hit_counts['hit_uranus']
+            hit_neptune = hit_counts['hit_neptune']
+            delta_jupiter = delta_values['delta_jupiter']
+            delta_saturn = delta_values['delta_saturn']
+            delta_uranus = delta_values['delta_uranus']
+            delta_neptune = delta_values['delta_neptune']
+        
+        if sta_available:
+            delta_sta = delta_values['delta_sta']
+        if stb_available:
+            delta_stb = delta_values['delta_stb']
+        if mes_available:
+            delta_mes = delta_values['delta_mes']
+        if vex_available:
+            delta_vex = delta_values['delta_vex']
+        if psp_available:
+            delta_psp = delta_values['delta_psp']
+        if solo_available:
+            delta_solo = delta_values['delta_solo']
+        if bepi_available:
+            delta_bepi = delta_values['delta_bepi']
+            
+        delta_L1 = delta_values['delta_L1']
+        delta_mercury = delta_values['delta_mercury']
+        delta_venus = delta_values['delta_venus']
+        delta_earth = delta_values['delta_earth']
+        delta_mars = delta_values['delta_mars']
+        
+        mars_r = positions['mars_r']
+        earth_r = positions['earth_r']
+        venus_r = positions['venus_r']
+        mercury_r = positions['mercury_r']
+        L1_r = positions['L1_r']
+        mars_lon = positions['mars_lon']
+        earth_lon = positions['earth_lon']
+        venus_lon = positions['venus_lon']
+        mercury_lon = positions['mercury_lon']
+        L1_lon = positions['L1_lon']
+        
+        if sta_available:
+            sta_r = positions['sta_r']
+            sta_lon = positions['sta_lon']        
+        if stb_available:
+            stb_r = positions['stb_r']
+            stb_lon = positions['stb_lon']    
+        if bepi_available:   
+            bepi_r = positions['bepi_r']
+            bepi_lon = positions['bepi_lon']    
+        if solo_available:
+            solo_r = positions['solo_r']
+            solo_lon = positions['solo_lon']
+        if psp_available:
+            psp_r = positions['psp_r']
+            psp_lon = positions['psp_lon']
+        if vex_available:
+            vex_r = positions['vex_r']
+            vex_lon = positions['vex_lon']
+        if mes_available:
+            mes_r = positions['mes_r']
+            mes_lon = positions['mes_lon']
+        if outer_system:
+            neptune_r = positions['neptune_r']
+            uranus_r = positions['uranus_r']
+            saturn_r = positions['saturn_r']
+            jupiter_r = positions['jupiter_r']
+            neptune_lon = positions['neptune_lon']
+            uranus_lon = positions['uranus_lon']
+            saturn_lon = positions['saturn_lon']
+            jupiter_lon = positions['jupiter_lon']
           
     pred = []
     
@@ -788,374 +867,489 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     
     hit = 0
     
-    #if runnumber == 137:
-     #   print('halfwidth:', np.rad2deg(halfwidth))
-      #  print('direction:', np.rad2deg(direction))
-       # print('f:', f)
-        #pdb.set_trace()
-    
-
-    if sta_available == 1 and hit_sta == 1:
-        ############# STEREO-A #############
-        d_sta = elevo_analytic(R, f, halfwidth, delta_sta, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_sta = np.argmin(np.abs(d_sta - sta_r))
-
-        # arrival time at STEREO-A
-        arrtime_sta = time_array[index_sta]
-
-        # arrival speed at STEREO-A
-        distance_diff = np.diff(d_sta*AU)
-        speed_sta = distance_diff / time_diff
-        arrspeed_sta = speed_sta[index_sta-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at STEREO-A:", arrtime_sta.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at STEREO-A: {arrspeed_sta:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "STEREO-A", "arrival time [UT]": arrtime_sta.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_sta)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if stb_available == 1 and hit_stb == 1:
-        ############# STEREO-B #############
-        d_stb = elevo_analytic(R, f, halfwidth, delta_stb, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_stb = np.argmin(np.abs(d_stb - stb_r))
-
-        # arrival time at STEREO-B
-        arrtime_stb = time_array[index_stb]
-
-        # arrival speed at STEREO-B
-        distance_diff = np.diff(d_stb*AU)
-        speed_stb = distance_diff / time_diff
-        arrspeed_stb = speed_stb[index_stb-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at STEREO-B:", arrtime_stb.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at STEREO-B: {arrspeed_stb:.0f} km/s")
-        
-        hit = 1
-
-        pred.append({"target": "STEREO-B", "arrival time [UT]": arrtime_stb.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_stb)), "dt [h]": np.nan, "dv [km/s]": np.nan})        
-        
-    if mes_available == 1 and hit_mes == 1:
-        ############# MESSENGER #############
-        d_mes = elevo_analytic(R, f, halfwidth, delta_mes, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_mes = np.argmin(np.abs(d_mes - mes_r))
-
-        # arrival time at MESSENGER
-        arrtime_mes = time_array[index_mes]
-
-        # arrival speed at MESSENGER
-        distance_diff = np.diff(d_mes*AU)
-        speed_mes = distance_diff / time_diff
-        arrspeed_mes = speed_mes[index_mes-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at MESSENGER:", arrtime_mes.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at MESSENGER: {arrspeed_mes:.0f} km/s")
-        
-        hit = 1
-
-        pred.append({"target": "MESSENGER", "arrival time [UT]": arrtime_mes.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_mes)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-        
-    if vex_available == 1 and hit_vex == 1:
-        ############# Venus Express #############
-        d_vex = elevo_analytic(R, f, halfwidth, delta_vex, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_vex = np.argmin(np.abs(d_vex - vex_r))
-
-        # arrival time at Venus Express
-        arrtime_vex = time_array[index_vex]
-
-        # arrival speed at Venus Express
-        distance_diff = np.diff(d_vex*AU)
-        speed_vex = distance_diff / time_diff
-        arrspeed_vex = speed_vex[index_vex-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at Venus Express:", arrtime_vex.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at Venus Express: {arrspeed_vex:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "Venus Express", "arrival time [UT]": arrtime_vex.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_vex)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if solo_available == 1 and hit_solo == 1:
-        ############# Solar Orbiter #############
-        d_solo = elevo_analytic(R, f, halfwidth, delta_solo, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_solo = np.argmin(np.abs(d_solo - solo_r))
-
-        # arrival time at Solar Orbiter
-        arrtime_solo = time_array[index_solo]
-
-        # arrival speed at Solar Orbiter
-        distance_diff = np.diff(d_solo*AU)
-        speed_solo = distance_diff / time_diff
-        arrspeed_solo = speed_solo[index_solo-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at Solar Orbiter:", arrtime_solo.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at Solar Orbiter: {arrspeed_solo:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "Solar Orbiter", "arrival time [UT]": arrtime_solo.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_solo)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if psp_available == 1 and hit_psp == 1:
-        ############# Parker Solar Probe #############
-        d_psp = elevo_analytic(R, f, halfwidth, delta_psp, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_psp = np.argmin(np.abs(d_psp - psp_r))
-
-        # arrival time at Parker Solar Probe
-        arrtime_psp = time_array[index_psp]
-
-        # arrival speed at Parker Solar Probe
-        distance_diff = np.diff(d_psp*AU)
-        speed_psp = distance_diff / time_diff
-        arrspeed_psp = speed_psp[index_psp-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at Parker Solar Probe:", arrtime_psp.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at Parker Solar Probe: {arrspeed_psp:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "Parker Solar Probe", "arrival time [UT]": arrtime_psp.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_psp)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if bepi_available == 1 and hit_bepi == 1:
-        ############# BepiColombo #############
-        d_bepi = elevo_analytic(R, f, halfwidth, delta_bepi, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_bepi = np.argmin(np.abs(d_bepi - bepi_r))
-
-        # arrival time at BepiColombo
-        arrtime_bepi = time_array[index_bepi]
-
-        # arrival speed at BepiColombo
-        distance_diff = np.diff(d_bepi*AU)
-        speed_bepi = distance_diff / time_diff
-        arrspeed_bepi = speed_bepi[index_bepi-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at BepiColombo:", arrtime_bepi.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at BepiColombo: {arrspeed_bepi:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "BepiColombo", "arrival time [UT]": arrtime_bepi.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_bepi)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if hit_mercury == 1:
-        ############# Mercury #############
-        d_mercury = elevo_analytic(R, f, halfwidth, delta_mercury, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_mercury = np.argmin(np.abs(d_mercury - mercury_r))
-
-        # arrival time at Mercury
-        arrtime_mercury = time_array[index_mercury]
-
-        # arrival speed at Mercury
-        distance_diff = np.diff(d_mercury*AU)
-        speed_mercury = distance_diff / time_diff
-        arrspeed_mercury = speed_mercury[index_mercury-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at Mercury:", arrtime_mercury.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at Mercury: {arrspeed_mercury:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "Mercury", "arrival time [UT]": arrtime_mercury.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_mercury)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if hit_venus == 1:
-        ############# Venus #############
-        d_venus = elevo_analytic(R, f, halfwidth, delta_venus, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_venus = np.argmin(np.abs(d_venus - venus_r))
-
-        # arrival time at Venus
-        arrtime_venus = time_array[index_venus]
-
-        # arrival speed at Venus
-        distance_diff = np.diff(d_venus*AU)
-        speed_venus = distance_diff / time_diff
-        arrspeed_venus = speed_venus[index_venus-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at Venus:", arrtime_venus.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at Venus: {arrspeed_venus:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "Venus", "arrival time [UT]": arrtime_venus.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_venus)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if hit_L1 == 1:
-        ############# L1 #############
-        d_L1 = elevo_analytic(R, f, halfwidth, delta_L1, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_L1 = np.argmin(np.abs(d_L1 - L1_r))
-
-        # arrival time at L1
-        arrtime_L1 = time_array[index_L1]
-
-        # arrival speed at L1
-        distance_diff = np.diff(d_L1*AU)
-        speed_L1 = distance_diff / time_diff
-        arrspeed_L1 = speed_L1[index_L1-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at L1:", arrtime_L1.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at L1: {arrspeed_L1:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "L1", "arrival time [UT]": arrtime_L1.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_L1)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if hit_mars == 1:
-        ############# Mars #############
-        d_mars = elevo_analytic(R, f, halfwidth, delta_mars, runnumber, out=False)
-
-        # Find the index of the closest value
-        index_mars = np.argmin(np.abs(d_mars - mars_r))
-
-        # arrival time at Mars
-        arrtime_mars = time_array[index_mars]
-
-        # arrival speed at Mars
-        distance_diff = np.diff(d_mars*AU)
-        speed_mars = distance_diff / time_diff
-        arrspeed_mars = speed_mars[index_mars-1] # first element is cut off during building the time derivative
-
-        print("------------------------------------")
-        print("Arrival time at Mars:", arrtime_mars.strftime("%Y-%m-%d %H:%M"))
-        print(f"Arrival speed at Mars: {arrspeed_mars:.0f} km/s")
-        
-        hit = 1
-        
-        pred.append({"target": "Mars", "arrival time [UT]": arrtime_mars.strftime("%Y-%m-%d %H:%M"),
-                     "arrival speed [km/s]": int(round(arrspeed_mars)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-    if outer_system == 1:
-
-        if hit_jupiter == 1:
-            ############# Jupiter #############
-            d_jupiter = elevo_analytic(R, f, halfwidth, delta_jupiter, runnumber, out=False)
+    if ISSI:
+        if L1_available == 1 and hit_L1 == 1:
+            ############# STEREO-A #############
+            d_L1 = elevo_analytic(R, f, halfwidth, delta_L1, runnumber, out=False)
 
             # Find the index of the closest value
-            index_jupiter = np.argmin(np.abs(d_jupiter - jupiter_r))
+            index_L1 = np.argmin(np.abs(d_L1 - L1_r))
 
-            # arrival time at Jupiter
-            arrtime_jupiter = time_array[index_jupiter]
+            # arrival time at STEREO-A
+            arrtime_L1 = time_array[index_L1]
 
-            # arrival speed at Jupiter
-            distance_diff = np.diff(d_jupiter*AU)
-            speed_jupiter = distance_diff / time_diff
-            arrspeed_jupiter = speed_jupiter[index_jupiter-1] # first element is cut off during building the time derivative
+            # arrival speed at STEREO-A
+            distance_diff = np.diff(d_L1*AU)
+            speed_L1 = distance_diff / time_diff
+            arrspeed_L1 = speed_L1[index_L1-1] # first element is cut off during building the time derivative
 
             print("------------------------------------")
-            print("Arrival time at Jupiter:", arrtime_jupiter.strftime("%Y-%m-%d %H:%M"))
-            print(f"Arrival speed at Jupiter: {arrspeed_jupiter:.0f} km/s")
+            print("Arrival time at L1:", arrtime_L1.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at L1: {arrspeed_L1:.0f} km/s")
             
             hit = 1
             
-            pred.append({"target": "Jupiter", "arrival time [UT]": arrtime_jupiter.strftime("%Y-%m-%d %H:%M"),
-                         "arrival speed [km/s]": int(round(arrspeed_jupiter)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-        if hit_saturn == 1:
-            ############# Saturn #############
-            d_saturn = elevo_analytic(R, f, halfwidth, delta_saturn, runnumber, out=False)
+            pred.append({"target": "L1", "arrival time [UT]": arrtime_L1.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_L1)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+            
+        if L1E10_available == 1 and hit_L1E10 == 1:
+            ############# STEREO-A #############
+            d_L1E10 = elevo_analytic(R, f, halfwidth, delta_L1E10, runnumber, out=False)
 
             # Find the index of the closest value
-            index_saturn = np.argmin(np.abs(d_saturn - saturn_r))
+            index_L1E10 = np.argmin(np.abs(d_L1E10 - L1E10_r))
 
-            # arrival time at Saturn
-            arrtime_saturn = time_array[index_saturn]
+            # arrival time at STEREO-A
+            arrtime_L1E10 = time_array[index_L1E10]
 
-            # arrival speed at Saturn
-            distance_diff = np.diff(d_saturn*AU)
-            speed_saturn = distance_diff / time_diff
-            arrspeed_saturn = speed_saturn[index_saturn-1] # first element is cut off during building the time derivative
+            # arrival speed at STEREO-A
+            distance_diff = np.diff(d_L1E10*AU)
+            speed_L1E10 = distance_diff / time_diff
+            arrspeed_L1E10 = speed_L1E10[index_L1E10-1] # first element is cut off during building the time derivative
 
             print("------------------------------------")
-            print("Arrival time at Saturn:", arrtime_saturn.strftime("%Y-%m-%d %H:%M"))
-            print(f"Arrival speed at Saturn: {arrspeed_saturn:.0f} km/s")
+            print("Arrival time at L1E10:", arrtime_L1E10.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at L1E10: {arrspeed_L1E10:.0f} km/s")
             
             hit = 1
             
-            pred.append({"target": "Saturn", "arrival time [UT]": arrtime_saturn.strftime("%Y-%m-%d %H:%M"),
-                         "arrival speed [km/s]": int(round(arrspeed_saturn)), "dt [h]": np.nan, "dv [km/s]": np.nan})
-
-        if hit_uranus == 1:
-            ############# Uranus #############
-            d_uranus = elevo_analytic(R, f, halfwidth, delta_uranus, runnumber, out=False)
+            pred.append({"target": "L1E10", "arrival time [UT]": arrtime_L1E10.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_L1E10)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+            
+        if L1E20_available == 1 and hit_L1E20 == 1:
+            ############# STEREO-A #############
+            d_L1E20 = elevo_analytic(R, f, halfwidth, delta_L1E20, runnumber, out=False)
 
             # Find the index of the closest value
-            index_uranus = np.argmin(np.abs(d_uranus - uranus_r))
+            index_L1E20 = np.argmin(np.abs(d_L1E20 - L1E20_r))
 
-            # arrival time at Uranus
-            arrtime_uranus = time_array[index_uranus]
+            # arrival time at STEREO-A
+            arrtime_L1E20 = time_array[index_L1E20]
 
-            # arrival speed at Uranus
+            # arrival speed at STEREO-A
+            distance_diff = np.diff(d_L1E20*AU)
+            speed_L1E20 = distance_diff / time_diff
+            arrspeed_L1E20 = speed_L1E20[index_L1E20-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at L1E20:", arrtime_L1E20.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at L1E20: {arrspeed_L1E20:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "L1E20", "arrival time [UT]": arrtime_L1E20.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_L1E20)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+            
+        if L1W10_available == 1 and hit_L1W10 == 1:
+            ############# STEREO-A #############
+            d_L1W10 = elevo_analytic(R, f, halfwidth, delta_L1W10, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_L1W10 = np.argmin(np.abs(d_L1W10 - L1W10_r))
+
+            # arrival time at STEREO-A
+            arrtime_L1W10 = time_array[index_L1W10]
+
+            # arrival speed at STEREO-A
+            distance_diff = np.diff(d_L1W10*AU)
+            speed_L1W10 = distance_diff / time_diff
+            arrspeed_L1W10 = speed_L1W10[index_L1W10-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at L1W10:", arrtime_L1W10.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at L1W10: {arrspeed_L1W10:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "L1W10", "arrival time [UT]": arrtime_L1W10.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_L1W10)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+            
+        if L1W20_available == 1 and hit_L1W20 == 1:
+            ############# STEREO-A #############
+            d_L1W20 = elevo_analytic(R, f, halfwidth, delta_L1W20, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_L1W20 = np.argmin(np.abs(d_L1W20 - L1W20_r))
+
+            # arrival time at STEREO-A
+            arrtime_L1W20 = time_array[index_L1W20]
+
+            # arrival speed at STEREO-A
+            distance_diff = np.diff(d_L1W20*AU)
+            speed_L1W20 = distance_diff / time_diff
+            arrspeed_L1W20 = speed_L1W20[index_L1W20-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at L1W20:", arrtime_L1W20.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at L1W20: {arrspeed_L1W20:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "L1W20", "arrival time [UT]": arrtime_L1W20.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_L1W20)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+        
+    if not ISSI:
+        if sta_available == 1 and hit_sta == 1:
+            ############# STEREO-A #############
+            d_sta = elevo_analytic(R, f, halfwidth, delta_sta, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_sta = np.argmin(np.abs(d_sta - sta_r))
+
+            # arrival time at STEREO-A
+            arrtime_sta = time_array[index_sta]
+
+            # arrival speed at STEREO-A
+            distance_diff = np.diff(d_sta*AU)
+            speed_sta = distance_diff / time_diff
+            arrspeed_sta = speed_sta[index_sta-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at STEREO-A:", arrtime_sta.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at STEREO-A: {arrspeed_sta:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "STEREO-A", "arrival time [UT]": arrtime_sta.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_sta)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if stb_available == 1 and hit_stb == 1:
+            ############# STEREO-B #############
+            d_stb = elevo_analytic(R, f, halfwidth, delta_stb, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_stb = np.argmin(np.abs(d_stb - stb_r))
+
+            # arrival time at STEREO-B
+            arrtime_stb = time_array[index_stb]
+
+            # arrival speed at STEREO-B
+            distance_diff = np.diff(d_stb*AU)
+            speed_stb = distance_diff / time_diff
+            arrspeed_stb = speed_stb[index_stb-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at STEREO-B:", arrtime_stb.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at STEREO-B: {arrspeed_stb:.0f} km/s")
+            
+            hit = 1
+
+            pred.append({"target": "STEREO-B", "arrival time [UT]": arrtime_stb.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_stb)), "dt [h]": np.nan, "dv [km/s]": np.nan})        
+            
+        if mes_available == 1 and hit_mes == 1:
+            ############# MESSENGER #############
+            d_mes = elevo_analytic(R, f, halfwidth, delta_mes, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_mes = np.argmin(np.abs(d_mes - mes_r))
+
+            # arrival time at MESSENGER
+            arrtime_mes = time_array[index_mes]
+
+            # arrival speed at MESSENGER
+            distance_diff = np.diff(d_mes*AU)
+            speed_mes = distance_diff / time_diff
+            arrspeed_mes = speed_mes[index_mes-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at MESSENGER:", arrtime_mes.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at MESSENGER: {arrspeed_mes:.0f} km/s")
+            
+            hit = 1
+
+            pred.append({"target": "MESSENGER", "arrival time [UT]": arrtime_mes.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_mes)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+            
+        if vex_available == 1 and hit_vex == 1:
+            ############# Venus Express #############
+            d_vex = elevo_analytic(R, f, halfwidth, delta_vex, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_vex = np.argmin(np.abs(d_vex - vex_r))
+
+            # arrival time at Venus Express
+            arrtime_vex = time_array[index_vex]
+
+            # arrival speed at Venus Express
+            distance_diff = np.diff(d_vex*AU)
+            speed_vex = distance_diff / time_diff
+            arrspeed_vex = speed_vex[index_vex-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at Venus Express:", arrtime_vex.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at Venus Express: {arrspeed_vex:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "Venus Express", "arrival time [UT]": arrtime_vex.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_vex)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if solo_available == 1 and hit_solo == 1:
+            ############# Solar Orbiter #############
+            d_solo = elevo_analytic(R, f, halfwidth, delta_solo, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_solo = np.argmin(np.abs(d_solo - solo_r))
+
+            # arrival time at Solar Orbiter
+            arrtime_solo = time_array[index_solo]
+
+            # arrival speed at Solar Orbiter
+            distance_diff = np.diff(d_solo*AU)
+            speed_solo = distance_diff / time_diff
+            arrspeed_solo = speed_solo[index_solo-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at Solar Orbiter:", arrtime_solo.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at Solar Orbiter: {arrspeed_solo:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "Solar Orbiter", "arrival time [UT]": arrtime_solo.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_solo)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if psp_available == 1 and hit_psp == 1:
+            ############# Parker Solar Probe #############
+            d_psp = elevo_analytic(R, f, halfwidth, delta_psp, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_psp = np.argmin(np.abs(d_psp - psp_r))
+
+            # arrival time at Parker Solar Probe
+            arrtime_psp = time_array[index_psp]
+
+            # arrival speed at Parker Solar Probe
+            distance_diff = np.diff(d_psp*AU)
+            speed_psp = distance_diff / time_diff
+            arrspeed_psp = speed_psp[index_psp-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at Parker Solar Probe:", arrtime_psp.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at Parker Solar Probe: {arrspeed_psp:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "Parker Solar Probe", "arrival time [UT]": arrtime_psp.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_psp)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if bepi_available == 1 and hit_bepi == 1:
+            ############# BepiColombo #############
+            d_bepi = elevo_analytic(R, f, halfwidth, delta_bepi, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_bepi = np.argmin(np.abs(d_bepi - bepi_r))
+
+            # arrival time at BepiColombo
+            arrtime_bepi = time_array[index_bepi]
+
+            # arrival speed at BepiColombo
+            distance_diff = np.diff(d_bepi*AU)
+            speed_bepi = distance_diff / time_diff
+            arrspeed_bepi = speed_bepi[index_bepi-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at BepiColombo:", arrtime_bepi.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at BepiColombo: {arrspeed_bepi:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "BepiColombo", "arrival time [UT]": arrtime_bepi.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_bepi)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if hit_mercury == 1:
+            ############# Mercury #############
+            d_mercury = elevo_analytic(R, f, halfwidth, delta_mercury, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_mercury = np.argmin(np.abs(d_mercury - mercury_r))
+
+            # arrival time at Mercury
+            arrtime_mercury = time_array[index_mercury]
+
+            # arrival speed at Mercury
+            distance_diff = np.diff(d_mercury*AU)
+            speed_mercury = distance_diff / time_diff
+            arrspeed_mercury = speed_mercury[index_mercury-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at Mercury:", arrtime_mercury.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at Mercury: {arrspeed_mercury:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "Mercury", "arrival time [UT]": arrtime_mercury.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_mercury)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if hit_venus == 1:
+            ############# Venus #############
+            d_venus = elevo_analytic(R, f, halfwidth, delta_venus, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_venus = np.argmin(np.abs(d_venus - venus_r))
+
+            # arrival time at Venus
+            arrtime_venus = time_array[index_venus]
+
+            # arrival speed at Venus
+            distance_diff = np.diff(d_venus*AU)
+            speed_venus = distance_diff / time_diff
+            arrspeed_venus = speed_venus[index_venus-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at Venus:", arrtime_venus.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at Venus: {arrspeed_venus:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "Venus", "arrival time [UT]": arrtime_venus.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_venus)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if hit_L1 == 1:
+            ############# L1 #############
+            d_L1 = elevo_analytic(R, f, halfwidth, delta_L1, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_L1 = np.argmin(np.abs(d_L1 - L1_r))
+
+            # arrival time at L1
+            arrtime_L1 = time_array[index_L1]
+
+            # arrival speed at L1
+            distance_diff = np.diff(d_L1*AU)
+            speed_L1 = distance_diff / time_diff
+            arrspeed_L1 = speed_L1[index_L1-1] # first element is cut off during building the time derivative
+
+            print("------------------------------------")
+            print("Arrival time at L1:", arrtime_L1.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at L1: {arrspeed_L1:.0f} km/s")
+            
+            hit = 1
+            
+            pred.append({"target": "L1", "arrival time [UT]": arrtime_L1.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_L1)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+        if hit_mars == 1:
+            ############# Mars #############
+            d_mars = elevo_analytic(R, f, halfwidth, delta_mars, runnumber, out=False)
+
+            # Find the index of the closest value
+            index_mars = np.argmin(np.abs(d_mars - mars_r))
+
+            # arrival time at Mars
+            arrtime_mars = time_array[index_mars]
+
+            # arrival speed at Mars
             distance_diff = np.diff(d_mars*AU)
-            speed_uranus = distance_diff / time_diff
-            arrspeed_uranus = speed_uranus[index_uranus-1] # first element is cut off during building the time derivative
+            speed_mars = distance_diff / time_diff
+            arrspeed_mars = speed_mars[index_mars-1] # first element is cut off during building the time derivative
 
             print("------------------------------------")
-            print("Arrival time at Uranus:", arrtime_uranus.strftime("%Y-%m-%d %H:%M"))
-            print(f"Arrival speed at Uranus: {arrspeed_uranus:.0f} km/s")
+            print("Arrival time at Mars:", arrtime_mars.strftime("%Y-%m-%d %H:%M"))
+            print(f"Arrival speed at Mars: {arrspeed_mars:.0f} km/s")
             
             hit = 1
             
-            pred.append({"target": "Uranus", "arrival time [UT]": arrtime_uranus.strftime("%Y-%m-%d %H:%M"),
-                         "arrival speed [km/s]": int(round(arrspeed_uranus)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+            pred.append({"target": "Mars", "arrival time [UT]": arrtime_mars.strftime("%Y-%m-%d %H:%M"),
+                        "arrival speed [km/s]": int(round(arrspeed_mars)), "dt [h]": np.nan, "dv [km/s]": np.nan})
 
-        if hit_neptune == 1:
-            ############# Neptune #############
-            d_neptune = elevo_analytic(R, f, halfwidth, delta_neptune, runnumber, out=False)
+        if outer_system == 1:
 
-            # Find the index of the closest value
-            index_neptune = np.argmin(np.abs(d_neptune - neptune_r))
+            if hit_jupiter == 1:
+                ############# Jupiter #############
+                d_jupiter = elevo_analytic(R, f, halfwidth, delta_jupiter, runnumber, out=False)
 
-            # arrival time at Neptune
-            arrtime_neptune = time_array[index_neptune]
+                # Find the index of the closest value
+                index_jupiter = np.argmin(np.abs(d_jupiter - jupiter_r))
 
-            # arrival speed at Neptune
-            distance_diff = np.diff(d_neptune*AU)
-            speed_neptune = distance_diff / time_diff
-            arrspeed_neptune = speed_neptune[index_neptune-1] # first element is cut off during building the time derivative
+                # arrival time at Jupiter
+                arrtime_jupiter = time_array[index_jupiter]
 
-            print("------------------------------------")
-            print("Arrival time at Neptune:", arrtime_neptune.strftime("%Y-%m-%d %H:%M"))
-            print(f"Arrival speed at Neptune: {arrspeed_neptune:.0f} km/s")
-            
-            hit = 1
-            
-            pred.append({"target": "Neptune", "arrival time [UT]": arrtime_neptune.strftime("%Y-%m-%d %H:%M"),
-                         "arrival speed [km/s]": int(round(arrspeed_neptune)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+                # arrival speed at Jupiter
+                distance_diff = np.diff(d_jupiter*AU)
+                speed_jupiter = distance_diff / time_diff
+                arrspeed_jupiter = speed_jupiter[index_jupiter-1] # first element is cut off during building the time derivative
+
+                print("------------------------------------")
+                print("Arrival time at Jupiter:", arrtime_jupiter.strftime("%Y-%m-%d %H:%M"))
+                print(f"Arrival speed at Jupiter: {arrspeed_jupiter:.0f} km/s")
+                
+                hit = 1
+                
+                pred.append({"target": "Jupiter", "arrival time [UT]": arrtime_jupiter.strftime("%Y-%m-%d %H:%M"),
+                            "arrival speed [km/s]": int(round(arrspeed_jupiter)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+            if hit_saturn == 1:
+                ############# Saturn #############
+                d_saturn = elevo_analytic(R, f, halfwidth, delta_saturn, runnumber, out=False)
+
+                # Find the index of the closest value
+                index_saturn = np.argmin(np.abs(d_saturn - saturn_r))
+
+                # arrival time at Saturn
+                arrtime_saturn = time_array[index_saturn]
+
+                # arrival speed at Saturn
+                distance_diff = np.diff(d_saturn*AU)
+                speed_saturn = distance_diff / time_diff
+                arrspeed_saturn = speed_saturn[index_saturn-1] # first element is cut off during building the time derivative
+
+                print("------------------------------------")
+                print("Arrival time at Saturn:", arrtime_saturn.strftime("%Y-%m-%d %H:%M"))
+                print(f"Arrival speed at Saturn: {arrspeed_saturn:.0f} km/s")
+                
+                hit = 1
+                
+                pred.append({"target": "Saturn", "arrival time [UT]": arrtime_saturn.strftime("%Y-%m-%d %H:%M"),
+                            "arrival speed [km/s]": int(round(arrspeed_saturn)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+            if hit_uranus == 1:
+                ############# Uranus #############
+                d_uranus = elevo_analytic(R, f, halfwidth, delta_uranus, runnumber, out=False)
+
+                # Find the index of the closest value
+                index_uranus = np.argmin(np.abs(d_uranus - uranus_r))
+
+                # arrival time at Uranus
+                arrtime_uranus = time_array[index_uranus]
+
+                # arrival speed at Uranus
+                distance_diff = np.diff(d_mars*AU)
+                speed_uranus = distance_diff / time_diff
+                arrspeed_uranus = speed_uranus[index_uranus-1] # first element is cut off during building the time derivative
+
+                print("------------------------------------")
+                print("Arrival time at Uranus:", arrtime_uranus.strftime("%Y-%m-%d %H:%M"))
+                print(f"Arrival speed at Uranus: {arrspeed_uranus:.0f} km/s")
+                
+                hit = 1
+                
+                pred.append({"target": "Uranus", "arrival time [UT]": arrtime_uranus.strftime("%Y-%m-%d %H:%M"),
+                            "arrival speed [km/s]": int(round(arrspeed_uranus)), "dt [h]": np.nan, "dv [km/s]": np.nan})
+
+            if hit_neptune == 1:
+                ############# Neptune #############
+                d_neptune = elevo_analytic(R, f, halfwidth, delta_neptune, runnumber, out=False)
+
+                # Find the index of the closest value
+                index_neptune = np.argmin(np.abs(d_neptune - neptune_r))
+
+                # arrival time at Neptune
+                arrtime_neptune = time_array[index_neptune]
+
+                # arrival speed at Neptune
+                distance_diff = np.diff(d_neptune*AU)
+                speed_neptune = distance_diff / time_diff
+                arrspeed_neptune = speed_neptune[index_neptune-1] # first element is cut off during building the time derivative
+
+                print("------------------------------------")
+                print("Arrival time at Neptune:", arrtime_neptune.strftime("%Y-%m-%d %H:%M"))
+                print(f"Arrival speed at Neptune: {arrspeed_neptune:.0f} km/s")
+                
+                hit = 1
+                
+                pred.append({"target": "Neptune", "arrival time [UT]": arrtime_neptune.strftime("%Y-%m-%d %H:%M"),
+                            "arrival speed [km/s]": int(round(arrspeed_neptune)), "dt [h]": np.nan, "dv [km/s]": np.nan})
 
     print("------------------------------------")
     
@@ -1241,12 +1435,42 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     interp_elon = interp_func(x_new)
     
     # Define the starting point of the tangent
-    if HIobs == 'A':
-        start_angle = sta_lon
-        start_radius = sta_r
-    if HIobs == 'B':
-        start_angle = stb_lon
-        start_radius = stb_r
+    if ISSI:
+        if HIobs == 'L1e' or HIobs == 'L1w':
+            start_angle = L1_lon
+            start_radius = L1_r
+        if HIobs == 'L4':
+            start_angle = L4_lon
+            start_radius = L4_r
+        if HIobs == 'L5':
+            start_angle = L5_lon
+            start_radius = L5_r
+        if HIobs == 'R1e' or HIobs == 'R1w':
+            start_angle = R1_lon
+            start_radius = R1_r
+        if HIobs == 'R2':
+            start_angle = R2_lon
+            start_radius = R2_r
+        if HIobs == 'R3':
+            start_angle = R3_lon
+            start_radius = R3_r
+        if HIobs == 'R4':
+            start_angle = R4_lon
+            start_radius = R4_r
+        if HIobs == 'R5':
+            start_angle = R5_lon
+            start_radius = R5_r
+        if HIobs == 'R6':
+            start_angle = R6_lon
+            start_radius = R6_r     
+    
+    if not ISSI:
+        if HIobs == 'A':
+            start_angle = sta_lon
+            start_radius = sta_r
+        if HIobs == 'B':
+            start_angle = stb_lon
+            start_radius = stb_r
 
     # Define the length of the tangent
     tangent_length = 1.2
@@ -1272,7 +1496,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         for k in range(timegrid):
             
             if not movie:
-                k = 200
+                k = 150
             
             t = (np.arange(181) * np.pi/180) - direction
             t1 = (np.arange(181) * np.pi/180)
@@ -1298,185 +1522,268 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
 
             ax.plot(theta_ell, r_ell, color="tab:orange")
-
-            # plot the position of the planets
-            ax.scatter(mercury_lon, mercury_r, color = 'dimgrey', marker = 'o', label = 'Point')
-            ax.scatter(venus_lon, venus_r, color = 'orange', marker = 'o', label = 'Point')
-            ax.scatter(earth_lon, earth_r, color = 'mediumseagreen', marker = 'o', label = 'Point')
-            ax.scatter(mars_lon, mars_r, color = 'orangered', marker = 'o', label = 'Point')
-
-            # plot the position of the s/c
-            if sta_available:
-                ax.scatter(sta_lon, sta_r, color = 'red', marker = 's', label = 'Point')
-            if stb_available:
-                ax.scatter(stb_lon, stb_r, color = 'blue', marker = 's', label = 'Point')
-            if mes_available:
-                ax.scatter(mes_lon, mes_r, color = 'dimgrey', marker = 's', label = 'Point')
-            if vex_available:
-                ax.scatter(vex_lon, vex_r, color = 'orange', marker = 's', label = 'Point')
-            if psp_available:
-                ax.scatter(psp_lon, psp_r, color = 'black', marker = 's', label = 'Point')
-            if solo_available:
-                ax.scatter(solo_lon, solo_r, color = 'coral', marker = 's', label = 'Point')
-            if bepi_available:
-                ax.scatter(bepi_lon, bepi_r, color = 'blue', marker = 's', label = 'Point')
-
-            if outer_system == 0:
-                ax.set_rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12,
-                            alpha = 0.5, color = backcolor)
-                ax.set_ylim(0, 1.2) 
-            else:
-                ax.scatter(jupiter_lon, jupiter_r, color = 'darkgoldenrod', marker = 'o', label = 'Point')
-                ax.scatter(saturn_lon, saturn_r, color = 'palegreen', marker = 'o', label = 'Point')
-                ax.scatter(uranus_lon, uranus_r, color = 'cyan', marker = 'o', label = 'Point')
-                ax.scatter(neptune_lon, neptune_r, color = 'cornflowerblue', marker = 'o', label = 'Point')
-
-                plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
-                            alpha = 0.5, color = backcolor)
-                ax.set_ylim(0, 32)
-                
-            #######################################################
-            # shade HI field of view
-            # HI1 field of view:
-            hi1_fov_start = np.deg2rad(4.)
-            hi1_fov_end = np.deg2rad(24.)
-
-            #---- inner HI1 fov ------
-            if HIobs == 'A':
-                end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
-                
-                if sta_lon < 0:
-                    end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
-                else:
-                    end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
-                
-                line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
-                line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
-                #---- outer HI1 fov ------
-                end_hi1_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_end))
-                
-                if sta_lon < 0:
-                    end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
-                else:
-                    end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
-                    
-                line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
-                line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
-
-                # HI2 field of view:
-                hi2_fov_start = np.deg2rad(18.)
-                hi2_fov_end = np.deg2rad(88.)
-
-                #---- inner HI2 fov ------
-                end_hi2_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_start))
-                
-                if sta_lon < 0:
-                    end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
-                else:
-                    end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
-                
-                line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
-                line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
-                
-                #---- outer HI2 fov ------
-                end_hi2_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_end))
             
-                if sta_lon < 0:
-                    end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
-                else:
-                    end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
+            if ISSI:
+                if L45:
+                    ax.scatter(L1_lon, L1_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1E10_lon, L1E10_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1E20_lon, L1E20_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1W10_lon, L1W10_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1W20_lon, L1W20_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L4_lon, L4_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L5_lon, L5_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                if Ring:
+                    ax.scatter(R1_lon, R1_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(R2_lon, R2_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(R3_lon, R3_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(R4_lon, R4_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(R5_lon, R5_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(R6_lon, R6_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                
+                ax.set_rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12, alpha = 0.5, color = backcolor)
+                ax.set_ylim(0, 1.2)
 
-            if HIobs == 'B':
-                end_hi1_innerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi1_fov_start))
-                
-                if stb_lon < 0:
-                    end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
-                else:
-                    end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
-                
-                line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
-                line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
-                #---- outer HI1 fov ------
-                end_hi1_outerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi1_fov_end))
-                
-                if stb_lon < 0:
-                    end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
-                else:
-                    end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
-                    
-                line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
-                line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
+            if not ISSI:
+                # plot the position of the planets
+                ax.scatter(mercury_lon, mercury_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                ax.scatter(venus_lon, venus_r, color = 'orange', marker = 'o', label = 'Point')
+                ax.scatter(earth_lon, earth_r, color = 'mediumseagreen', marker = 'o', label = 'Point')
+                ax.scatter(mars_lon, mars_r, color = 'orangered', marker = 'o', label = 'Point')
 
-                # HI2 field of view:
-                hi2_fov_start = np.deg2rad(18.)
-                hi2_fov_end = np.deg2rad(88.)
+                # plot the position of the s/c
+                if sta_available:
+                    ax.scatter(sta_lon, sta_r, color = 'red', marker = 's', label = 'Point')
+                if stb_available:
+                    ax.scatter(stb_lon, stb_r, color = 'blue', marker = 's', label = 'Point')
+                if mes_available:
+                    ax.scatter(mes_lon, mes_r, color = 'dimgrey', marker = 's', label = 'Point')
+                if vex_available:
+                    ax.scatter(vex_lon, vex_r, color = 'orange', marker = 's', label = 'Point')
+                if psp_available:
+                    ax.scatter(psp_lon, psp_r, color = 'black', marker = 's', label = 'Point')
+                if solo_available:
+                    ax.scatter(solo_lon, solo_r, color = 'coral', marker = 's', label = 'Point')
+                if bepi_available:
+                    ax.scatter(bepi_lon, bepi_r, color = 'blue', marker = 's', label = 'Point')
 
-                #---- inner HI2 fov ------
-                end_hi2_innerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi2_fov_start))
-                
-                if stb_lon < 0:
-                    end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
+                if outer_system == 0:
+                    ax.set_rgrids((0.2, 0.4, 0.6, 0.8, 1.0, 1.2), ('0.2', '0.4', '0.6', '0.8', '1', '1.2 AU'), angle = 125, fontsize = 12,
+                                alpha = 0.5, color = backcolor)
+                    ax.set_ylim(0, 1.4) 
                 else:
-                    end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
+                    ax.scatter(jupiter_lon, jupiter_r, color = 'darkgoldenrod', marker = 'o', label = 'Point')
+                    ax.scatter(saturn_lon, saturn_r, color = 'palegreen', marker = 'o', label = 'Point')
+                    ax.scatter(uranus_lon, uranus_r, color = 'cyan', marker = 'o', label = 'Point')
+                    ax.scatter(neptune_lon, neptune_r, color = 'cornflowerblue', marker = 'o', label = 'Point')
+
+                    plt.rgrids((5, 10, 15, 20, 25, 30), ('5', '10', '15', '20', '25', '30 AU'), angle = 125, fontsize = 12,
+                                alpha = 0.5, color = backcolor)
+                    ax.set_ylim(0, 32)
                 
-                line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
-                line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
-                
-                #---- outer HI2 fov ------
-                end_hi2_outerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi2_fov_end))
-            
-                if stb_lon < 0:
-                    end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
-                else:
-                    end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
+                if not ISSI:
+                #######################################################
+                # shade HI field of view
+                # HI1 field of view:
+                    hi1_fov_start = np.deg2rad(4.)
+                    hi1_fov_end = np.deg2rad(24.)
+
+                    #---- inner HI1 fov ------
+                    if HIobs == 'A':
+                        end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
+                        
+                        if sta_lon < 0:
+                            end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
+                        else:
+                            end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
+                        
+                        line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
+                        line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
+                        #---- outer HI1 fov ------
+                        end_hi1_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_end))
+                        
+                        if sta_lon < 0:
+                            end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
+                        else:
+                            end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
                             
-            line_x_hi2_outer = np.array([start_angle, end_hi2_outerangle])
-            line_y_hi2_outer = np.array([start_radius, end_hi2_outerradius])
+                        line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
+                        line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
 
-            # Shade the region between the two lines
-            ax.plot(line_x_hi1_inner, line_y_hi1_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-            ax.plot(line_x_hi1_outer, line_y_hi1_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+                        # HI2 field of view:
+                        hi2_fov_start = np.deg2rad(18.)
+                        hi2_fov_end = np.deg2rad(88.)
 
-            ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
-            ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+                        #---- inner HI2 fov ------
+                        end_hi2_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_start))
+                        
+                        if sta_lon < 0:
+                            end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
+                        else:
+                            end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
+                        
+                        line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
+                        line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
+                        
+                        #---- outer HI2 fov ------
+                        end_hi2_outerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi2_fov_end))
+                    
+                        if sta_lon < 0:
+                            end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
+                        else:
+                            end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
+
+                    if HIobs == 'B':
+                        end_hi1_innerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi1_fov_start))
+                        
+                        if stb_lon < 0:
+                            end_hi1_innerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)                
+                        else:
+                            end_hi1_innerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_start)) / end_hi1_innerradius) - np.pi) - abs(start_angle)) * (-1)        
+                        
+                        line_x_hi1_inner = np.array([start_angle, end_hi1_innerangle])
+                        line_y_hi1_inner = np.array([start_radius, end_hi1_innerradius])
+                        #---- outer HI1 fov ------
+                        end_hi1_outerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi1_fov_end))
+                        
+                        if stb_lon < 0:
+                            end_hi1_outerangle = abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)                
+                        else:
+                            end_hi1_outerangle = (abs(np.arcsin((fov_length * np.sin(hi1_fov_end)) / end_hi1_outerradius)) - abs(start_angle)) * (-1)         
+                            
+                        line_x_hi1_outer = np.array([start_angle, end_hi1_outerangle])
+                        line_y_hi1_outer = np.array([start_radius, end_hi1_outerradius])
+
+                        # HI2 field of view:
+                        hi2_fov_start = np.deg2rad(18.)
+                        hi2_fov_end = np.deg2rad(88.)
+
+                        #---- inner HI2 fov ------
+                        end_hi2_innerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi2_fov_start))
+                        
+                        if stb_lon < 0:
+                            end_hi2_innerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)                
+                        else:
+                            end_hi2_innerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_start)) / end_hi2_innerradius) - np.pi) - abs(start_angle)) * (-1)               
+                        
+                        line_x_hi2_inner = np.array([start_angle, end_hi2_innerangle])
+                        line_y_hi2_inner = np.array([start_radius, end_hi2_innerradius])
+                        
+                        #---- outer HI2 fov ------
+                        end_hi2_outerradius = np.sqrt(fov_length**2 + stb_r**2 - 2. * fov_length * stb_r * np.cos(hi2_fov_end))
+                    
+                        if stb_lon < 0:
+                            end_hi2_outerangle = abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)                
+                        else:
+                            end_hi2_outerangle = (abs(np.arcsin((fov_length * np.sin(hi2_fov_end)) / end_hi2_outerradius)) - abs(start_angle)) * (-1)
+                                
+                    line_x_hi2_outer = np.array([start_angle, end_hi2_outerangle])
+                    line_y_hi2_outer = np.array([start_radius, end_hi2_outerradius])
+
+                    # Shade the region between the two lines
+                    ax.plot(line_x_hi1_inner, line_y_hi1_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+                    ax.plot(line_x_hi1_outer, line_y_hi1_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+
+                    ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
+                    ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
 
             if k < len(elon_rad)-1:
                 #print('k: ', k)
                 ######
                 # Calculate the ending point of the tangent
-                if HIobs == 'A':
+                #pdb.set_trace()
+                if ISSI:
+                    if HIobs == 'L1w':
+                        end_radius = np.sqrt(tangent_length**2 + L1_r**2 - 2. * tangent_length * L1_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (L1_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
+                        end_angle = (abs(beta) - abs(start_angle))
 
-                    end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
-
-                    # angle of end point of tangent
-                    if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-                        #print('version 1')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-                    else:
-                        #print('version 2')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
-
-                    if sta_lon < 0:
-                        end_angle = abs(beta) - abs(start_angle)
-                    else:
+                    if HIobs == 'L1e':
+                        elon_rad = elon_rad*(-1)
+                        end_radius = np.sqrt(tangent_length**2 + L1_r**2 - 2. * tangent_length * L1_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (L1_r/tangent_length): 
+                            print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                            end_angle = (abs(beta) - abs(start_angle)) #to test
+                        else:
+                            print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            end_angle = (abs(beta) - abs(start_angle)) * (-1) #to test
+                            print('other version 1')
+                        #if direction < 0:   
+                         #   end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                          #  print('other version 1')
+                        #else:
+                         #   end_angle = (abs(beta) - abs(start_angle))
+                          #  print('other version 2')
+                            
+                        #pdb.set_trace()
+                                            
+                    if HIobs == 'L4':
+                        end_radius = np.sqrt(tangent_length**2 + L4_r**2 - 2. * tangent_length * L4_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (L4_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
                         end_angle = (abs(beta) - abs(start_angle)) * (-1)
                         
-                if HIobs == 'B':
-
-                    end_radius = np.sqrt(tangent_length**2 + stb_r**2 - 2. * tangent_length * stb_r * np.cos(elon_rad[k]))
-
-                    # angle of end point of tangent
-                    if np.cos(elon_rad[k]) > (stb_r/tangent_length): 
-                        #print('version 1')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-                    else:
-                        #print('version 2')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
-
-                    if stb_lon < 0:
+                    if HIobs == 'L5':
+                        end_radius = np.sqrt(tangent_length**2 + L5_r**2 - 2. * tangent_length * L5_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (L5_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
                         end_angle = abs(beta) - abs(start_angle)
-                    else:
-                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                
+                if not ISSI:
+                    if HIobs == 'A':
+
+                        end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+
+                        if sta_lon < 0:
+                            end_angle = abs(beta) - abs(start_angle)
+                        else:
+                            end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                            
+                    if HIobs == 'B':
+
+                        end_radius = np.sqrt(tangent_length**2 + stb_r**2 - 2. * tangent_length * stb_r * np.cos(elon_rad[k]))
+
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (stb_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+
+                        if stb_lon < 0:
+                            end_angle = abs(beta) - abs(start_angle)
+                        else:
+                            end_angle = (abs(beta) - abs(start_angle)) * (-1)
 
                 # Calculate the coordinates of the line
                 line_x = np.array([start_angle, end_angle])
@@ -1488,7 +1795,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 if not det_plot:
                     break
                 
-            if det_plot and k==200:
+            if det_plot and k==150:
             #save single figure
                 filename = prediction_path + 'ELEvoHI_HEE_m.jpg'
                 plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
@@ -1605,7 +1912,6 @@ def assess_ensemble(ensemble, det_results, det_run_no, no_det_run):
                 #pdb.set_trace()
                 tmp_ensemble_results['arrival time (det) [UT]'] = det_results['arrival time [UT]'][j]
                 tmp_ensemble_results['arrival speed (det) [km/s]'] = det_results['arrival speed [km/s]'][j]
-                #pdb.set_trace()
             else:
                 tmp_ensemble_results['arrival time (det) [UT]'] = 'No hit!'
                 tmp_ensemble_results['arrival speed (det) [km/s]'] = np.nan
@@ -1618,12 +1924,15 @@ def assess_ensemble(ensemble, det_results, det_run_no, no_det_run):
         tmp_ensemble_results['arrival speed (std dev) [km/s]'] = std_dev_speed
         
         tmp_ensemble_results['dt (mean)'] = round(ensemble[ensemble['target'] == target_names[i]]['dt [h]'].mean(), 2)               
-        tmp_ensemble_results['dv (mean)'] = round(ensemble[ensemble['target'] == target_names[i]]['dv [km/s]'].mean(), 2)       
+        tmp_ensemble_results['dv (mean)'] = round(ensemble[ensemble['target'] == target_names[i]]['dv [km/s]'].mean(), 2)     
+        
+        if (det_results['target'] == target_names[i]).any():
+            tmp_ensemble_results['dt (det)'] = det_results['dt [h]'][j]
+            tmp_ensemble_results['dv (det)'] = det_results['dv [km/s]'][j]
+              
                        
         ensemble_results = pd.concat([ensemble_results, tmp_ensemble_results])
         
         j = j + 1
-    
-    #pdb.set_trace()
     
     return ensemble_results
