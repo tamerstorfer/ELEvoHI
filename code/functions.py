@@ -1539,6 +1539,10 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                     ax.scatter(R4_lon, R4_r, color = 'dimgrey', marker = 'o', label = 'Point')
                     ax.scatter(R5_lon, R5_r, color = 'dimgrey', marker = 'o', label = 'Point')
                     ax.scatter(R6_lon, R6_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1E10_lon, L1E10_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1E20_lon, L1E20_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1W10_lon, L1W10_r, color = 'dimgrey', marker = 'o', label = 'Point')
+                    ax.scatter(L1W20_lon, L1W20_r, color = 'dimgrey', marker = 'o', label = 'Point')
                 
                 ax.set_rgrids((0.2, 0.4, 0.6, 0.8, 1.0), ('0.2', '0.4', '0.6', '0.8', '1 AU'), angle = 125, fontsize = 12, alpha = 0.5, color = backcolor)
                 ax.set_ylim(0, 1.2)
@@ -1703,6 +1707,18 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                             beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
                             
                         end_angle = (abs(beta) - abs(start_angle))
+                        
+                    if HIobs == 'R1w':
+                        end_radius = np.sqrt(tangent_length**2 + R1_r**2 - 2. * tangent_length * R1_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (R1_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
+                        end_angle = (abs(beta) - abs(start_angle))
 
                     if HIobs == 'L1e':
                         elon_rad = elon_rad*(-1)
@@ -1717,14 +1733,20 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                             beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
                             end_angle = (abs(beta) - abs(start_angle)) * (-1) #to test
                             print('other version 1')
-                        #if direction < 0:   
-                         #   end_angle = (abs(beta) - abs(start_angle)) * (-1)
-                          #  print('other version 1')
-                        #else:
-                         #   end_angle = (abs(beta) - abs(start_angle))
-                          #  print('other version 2')
                             
-                        #pdb.set_trace()
+                    if HIobs == 'R1e':
+                        elon_rad = elon_rad*(-1)
+                        end_radius = np.sqrt(tangent_length**2 + R1_r**2 - 2. * tangent_length * R1_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (R1_r/tangent_length): 
+                            print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                            end_angle = (abs(beta) - abs(start_angle)) #to test
+                        else:
+                            print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            end_angle = (abs(beta) - abs(start_angle)) * (-1) #to test
+                            print('other version 1')
                                             
                     if HIobs == 'L4':
                         end_radius = np.sqrt(tangent_length**2 + L4_r**2 - 2. * tangent_length * L4_r * np.cos(elon_rad[k]))
@@ -1737,11 +1759,71 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                             beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
                             
                         end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                    
+                    if HIobs == 'R4':
+                        end_radius = np.sqrt(tangent_length**2 + R4_r**2 - 2. * tangent_length * R4_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (L4_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
+                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                        
+                    if HIobs == 'R3':
+                        end_radius = np.sqrt(tangent_length**2 + R3_r**2 - 2. * tangent_length * R3_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (R3_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
+                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                    
+                    if HIobs == 'R2':
+                        end_radius = np.sqrt(tangent_length**2 + R2_r**2 - 2. * tangent_length * R2_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (R2_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
+                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
                         
                     if HIobs == 'L5':
                         end_radius = np.sqrt(tangent_length**2 + L5_r**2 - 2. * tangent_length * L5_r * np.cos(elon_rad[k]))
                         # angle of end point of tangent
                         if np.cos(elon_rad[k]) > (L5_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
+                        end_angle = abs(beta) - abs(start_angle)
+                    
+                    if HIobs == 'R5':
+                        end_radius = np.sqrt(tangent_length**2 + R5_r**2 - 2. * tangent_length * R5_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (R5_r/tangent_length): 
+                            #print('version 1')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                        else:
+                            #print('version 2')
+                            beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                            
+                        end_angle = abs(beta) - abs(start_angle)
+                    
+                    if HIobs == 'R6':
+                        end_radius = np.sqrt(tangent_length**2 + R6_r**2 - 2. * tangent_length * R6_r * np.cos(elon_rad[k]))
+                        # angle of end point of tangent
+                        if np.cos(elon_rad[k]) > (R6_r/tangent_length): 
                             #print('version 1')
                             beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
                         else:

@@ -278,27 +278,6 @@ def main():
             if not L4_istime == None:
                 L4_istime = datetime.strptime(L4_istime, "%Y-%m-%d %H:%M")
             L4_isspeed = config.get('L4_isv_obs', np.nan)
-            
-            L1E10_istime = config.get('L1E10_ist_obs', None)
-            if not L1E10_istime == None:
-                L1E10_istime = datetime.strptime(L1E10_istime, "%Y-%m-%d %H:%M")
-            L1E10_isspeed = config.get('L1E10_isv_obs', np.nan)
-            
-            L1E20_istime = config.get('L1E20_ist_obs', None)
-            if not L1E20_istime == None:
-                L1E20_istime = datetime.strptime(L1E20_istime, "%Y-%m-%d %H:%M")
-            L1E20_isspeed = config.get('L1E20_isv_obs', np.nan)
-            
-            L1W10_istime = config.get('L1W10_ist_obs', None)
-            if not L1W10_istime == None:
-                L1W10_istime = datetime.strptime(L1W10_istime, "%Y-%m-%d %H:%M")
-            L1W10_isspeed = config.get('L1W10_isv_obs', np.nan)
-            
-            L1W20_istime = config.get('L1W20_ist_obs', None)
-            if not L1W20_istime == None:
-                L1W20_istime = datetime.strptime(L1W20_istime, "%Y-%m-%d %H:%M")
-            L1W20_isspeed = config.get('L1W20_isv_obs', np.nan)
-            
         
         if Ring:         
             R1_istime = config.get('R1_ist_obs', None)
@@ -330,6 +309,26 @@ def main():
             if not R6_istime == None:
                 R6_istime = datetime.strptime(R6_istime, "%Y-%m-%d %H:%M")
             R6_isspeed = config.get('R6_isv_obs', np.nan)
+        
+        L1E10_istime = config.get('L1E10_ist_obs', None)
+        if not L1E10_istime == None:
+            L1E10_istime = datetime.strptime(L1E10_istime, "%Y-%m-%d %H:%M")
+        L1E10_isspeed = config.get('L1E10_isv_obs', np.nan)
+        
+        L1E20_istime = config.get('L1E20_ist_obs', None)
+        if not L1E20_istime == None:
+            L1E20_istime = datetime.strptime(L1E20_istime, "%Y-%m-%d %H:%M")
+        L1E20_isspeed = config.get('L1E20_isv_obs', np.nan)
+        
+        L1W10_istime = config.get('L1W10_ist_obs', None)
+        if not L1W10_istime == None:
+            L1W10_istime = datetime.strptime(L1W10_istime, "%Y-%m-%d %H:%M")
+        L1W10_isspeed = config.get('L1W10_isv_obs', np.nan)
+        
+        L1W20_istime = config.get('L1W20_ist_obs', None)
+        if not L1W20_istime == None:
+            L1W20_istime = datetime.strptime(L1W20_istime, "%Y-%m-%d %H:%M")
+        L1W20_isspeed = config.get('L1W20_isv_obs', np.nan)
     
 
     # copy config file to prediction folder to save it as run-reference
@@ -686,6 +685,7 @@ def main():
                 'L1W10_available': L1W10_available,
                 'L1W20_available': L1W20_available
             }
+                
             positions = {
                 'L1_lon': L1_lon,
                 'L4_lon': L4_lon,
@@ -709,7 +709,11 @@ def main():
                 'R3_available': R3_available,
                 'R4_available': R4_available,
                 'R5_available': R5_available,
-                'R6_available': R6_available
+                'R6_available': R6_available,
+                'L1E10_available': L1E10_available,
+                'L1E20_available': L1E20_available,
+                'L1W10_available': L1W10_available,
+                'L1W20_available': L1W20_available
             }       
             positions = {
                 'R1_lon': R1_lon,
@@ -723,7 +727,15 @@ def main():
                 'R3_r': R3_r,
                 'R4_r': R4_r,
                 'R5_r': R5_r,
-                'R6_r': R6_r
+                'R6_r': R6_r,
+                'L1E10_lon': L1E10_lon,
+                'L1E20_lon': L1E20_lon,
+                'L1W10_lon': L1W10_lon,
+                'L1W20_lon': L1W20_lon,
+                'L1E10_r': L1E10_r,
+                'L1E20_r': L1E20_r,
+                'L1W10_r': L1W10_r,
+                'L1W20_r': L1W20_r
             }
         
     if not ISSI:       
@@ -954,7 +966,11 @@ def main():
                     'delta_R3': delta_R3,
                     'delta_R4': delta_R4,
                     'delta_R5': delta_R5,
-                    'delta_R6': delta_R6
+                    'delta_R6': delta_R6,
+                    'delta_L1E10': delta_L1E10,
+                    'delta_L1E20': delta_L1E20,
+                    'delta_L1W10': delta_L1W10,
+                    'delta_L1W20': delta_L1W20
                     }
                 
         else:                       
@@ -1140,19 +1156,26 @@ def main():
                 print('Delta(CME apex, R4): ', np.rad2deg(delta_R4))
                 print('Delta(CME apex, R5): ', np.rad2deg(delta_R5))
                 print('Delta(CME apex, R6): ', np.rad2deg(delta_R6))
+                print('Delta(CME apex, L1E10): ', np.rad2deg(delta_L1E10))
+                print('Delta(CME apex, L1E20): ', np.rad2deg(delta_L1E20))
+                print('Delta(CME apex, L1W10): ', np.rad2deg(delta_L1W10))
+                print('Delta(CME apex, L1W20): ', np.rad2deg(delta_L1W20))
                 
                 if round(np.rad2deg(np.abs(delta_R1)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_R1 = 1
                 else:
                     hit_R1 = 0
+                    
                 if round(np.rad2deg(np.abs(delta_R2)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_R2 = 1
                 else:
                     hit_R2 = 0
+                    
                 if round(np.rad2deg(np.abs(delta_R3)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_R3 = 1
                 else:
                     hit_R3 = 0
+                    
                 if round(np.rad2deg(np.abs(delta_R4)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_R4 = 1
                 else:
@@ -1160,11 +1183,32 @@ def main():
                 if round(np.rad2deg(np.abs(delta_R5)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_R5 = 1
                 else:
-                    hit_R5 = 0      
+                    hit_R5 = 0   
+                       
                 if round(np.rad2deg(np.abs(delta_R6)), 2) < round(np.rad2deg(halfwidth), 2):
                     hit_R6 = 1
                 else:
-                    hit_R6 = 0        
+                    hit_R6 = 0  
+                    
+                if round(np.rad2deg(np.abs(delta_L1E10)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1E10 = 1
+                else:
+                    hit_L1E10 = 0
+                    
+                if round(np.rad2deg(np.abs(delta_L1E20)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1E20 = 1
+                else:
+                    hit_L1E20 = 0
+                    
+                if round(np.rad2deg(np.abs(delta_L1W10)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1W10 = 1
+                else:
+                    hit_L1W10 = 0
+                    
+                if round(np.rad2deg(np.abs(delta_L1W20)), 2) < round(np.rad2deg(halfwidth), 2):
+                    hit_L1W20 = 1
+                else:
+                    hit_L1W20 = 0      
                 
                 hit_counts = {
                     'hit_R1': hit_R1,
@@ -1172,7 +1216,11 @@ def main():
                     'hit_R3': hit_R3,
                     'hit_R4': hit_R4,
                     'hit_R5': hit_R5,
-                    'hit_R6': hit_R6
+                    'hit_R6': hit_R6,
+                    'hit_L1E10': hit_L1E10,
+                    'hit_L1E20': hit_L1E20,
+                    'hit_L1W10': hit_L1W10,
+                    'hit_L1W20': hit_L1W20 
                 }    
         
         else:           
