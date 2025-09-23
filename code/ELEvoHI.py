@@ -24,7 +24,7 @@ import shutil
 import pdb
 import time as ti
 
-from functions import load_config,  merge_tracks,  fpf, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble
+from functions import load_config,  merge_tracks,  fpf, fpf_mab, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble
 
 # to do:
 # if no start and endtimes are given, use the whole track
@@ -62,7 +62,8 @@ def main():
     do_ensemble = config['do_ensemble']
     endtime = datetime.strptime(config['endtime'], "%Y-%m-%d %H:%M")
     starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
-    event_path = os.path.join(config['track_path'], config['tracklength'])
+    #event_path = os.path.join(config['track_path'], config['tracklength'])
+    event_path = config['track_path']
     
     lead_time = None
     
@@ -125,6 +126,7 @@ def main():
     
     if phi_FPF:
         fpf_fit = fpf(track, startcut, endcut, prediction_path)
+        fpf_fit = fpf_mab(track, startcut, endcut, prediction_path)
         phi = fpf_fit['phi_FPF']
         if do_ensemble:
             start_phi = np.deg2rad(fpf_fit['phi_FPF'] - config['phi_FPF_range'][0])
@@ -1127,6 +1129,8 @@ def main():
     if os.path.exists(txt_file):
         os.remove(txt_file)
         
+    #pdb.set_trace()
+        
     if no_det_run:
         with open(txt_file, 'a') as file:
             # Write the value to the file
@@ -1136,31 +1140,38 @@ def main():
             file.write('No DBMfit for runnumbers:' + '\n')
             file.write(str(nofit))
     else:
-        filtered_ensemble = ensemble[(ensemble['run no.'] == det_run_no) & (ensemble['target'] == 'L1')]
-        det_run_count = filtered_ensemble['dt [h]'].values
+        if not ensemble.empty:
+            filtered_ensemble = ensemble[(ensemble['run no.'] == det_run_no) & (ensemble['target'] == 'L1')]
+            det_run_count = filtered_ensemble['dt [h]'].values
+        else:
+            det_run_count = None
 
-    if np.isnan(det_run_count): 
+    if det_run_count is None:
         with open(txt_file, 'a') as file:
-            file.write('Deterministic run did not hit L1!' + '\n')  
+            file.write('No DBMfit possible for deterministic run!' + '\n')  
             file.write('No DBMfit for runnumbers:' + '\n')
-            file.write(str(nofit))           
-    else:               
-        #det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[idx]
-        #det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[idx]  
-        det_run_dv = filtered_ensemble['dv [km/s]'].values
-        det_run_dt = det_run_count
+            file.write(str(nofit))  
+    else:
+        if np.isnan(det_run_count): 
+            with open(txt_file, 'a') as file:
+                file.write('Deterministic run did not hit L1!' + '\n')           
+        else:               
+            #det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[idx]
+            #det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[idx]  
+            det_run_dv = filtered_ensemble['dv [km/s]'].values
+            det_run_dt = det_run_count
 
-        # Open the file in write mode ('w')
-        with open(txt_file, 'a') as file:
-            # Write the value to the file
-            file.write('Run number of deterministic run:' + '\n')
-            file.write(str(det_run_no) +  '\n')
-            file.write('Difference in arrival time:' + '\n')
-            file.write(str(det_run_dt) +  '\n')
-            file.write('Difference in arrival speed:' + '\n')
-            file.write(str(det_run_dv) +  '\n')
-            file.write('No DBMfit for runnumbers:' + '\n')
-            file.write(str(nofit))
+            # Open the file in write mode ('w')
+            with open(txt_file, 'a') as file:
+                # Write the value to the file
+                file.write('Run number of deterministic run:' + '\n')
+                file.write(str(det_run_no) +  '\n')
+                file.write('Difference in arrival time:' + '\n')
+                file.write(str(det_run_dt) +  '\n')
+                file.write('Difference in arrival speed:' + '\n')
+                file.write(str(det_run_dv) +  '\n')
+                file.write('No DBMfit for runnumbers:' + '\n')
+                file.write(str(nofit))
     
     if ensemble.empty:
         with open(txt_file, 'a') as file:

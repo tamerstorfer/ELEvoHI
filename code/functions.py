@@ -8,6 +8,7 @@ from scipy.interpolate import interp1d
 from datetime import datetime,timedelta
 import matplotlib.dates as mdates
 from astropy.time import Time as atime
+from astropy import units as u
 import matplotlib.patheffects as path_effects
 from astropy import constants as const
 from sunpy.coordinates import frames, get_horizons_coord
@@ -20,6 +21,7 @@ import logging
 import sys
 import pdb
 import gc
+import copy
 
 # Constants
 AU = const.au.to_value('km')
@@ -157,15 +159,162 @@ def fpf_function(xdata, phi, speed):
 
     return elon_fit
 
+def fpf_function_aswo(xdata, phi, speed, launch_init):
+    # function to fit time-elongation profile of CME
+    # assumptions: constant speed, fixed direction
+
+    scrad = 1.0
+
+    xdata_adjusted  = xdata - launch_init
+
+    elon_fit = np.arctan((speed * xdata_adjusted * np.sin(phi)) / (scrad - speed * xdata_adjusted * np.cos(phi)))
+    
+    return elon_fit
+
+def fpf_mab(track, startcut, endcut, prediction_path):
+
+    df = track.copy()
+    
+    # Slice elongation
+    elon = df["elongation"][startcut:endcut]
+    
+    # Slice time
+    time_nu = np.array(df["time"][startcut:endcut])
+    
+    # time for plotting
+    time = df["time"][startcut:endcut]
+    
+    # Convert to astropy Time objects
+    t_utc = atime(time_nu, scale="utc")
+
+    # Convert to TAI
+    t_tai = t_utc.tai
+
+    # Seconds relative to the first point in the slice
+    taitime = (t_tai - t_tai[0]).sec
+
+    # Normalized time axis
+    time_num = taitime - np.min(taitime)
+
+    # Output
+    xdata = time_num
+    ydata = elon
+    
+    # Initial guess for parameters phi and speed
+    phi_init = np.deg2rad(60.)
+    speed_init = 500./AU 
+    launch_offset_init=-20.0*3600.0
+    
+    bounds = ([0, 200./AU, launch_offset_init], [np.pi, 4000./AU, 0.])  # Example bounds: phi between 0 and pi/2, speed >= 0
+    
+    ydata_rad = np.deg2rad(ydata)
+    
+    # Perform the curve fitting
+
+    try:
+
+        params, covariance = curve_fit(fpf_function_aswo, xdata, ydata_rad, p0=[phi_init, speed_init, launch_offset_init], bounds=bounds)
+        phi_fit, speed_fit, tinit_fit = params     
+        
+    except ValueError:
+    
+        return np.nan, np.nan, [np.nan]*len(xdata)
+    
+   
+    
+    # Generate the fitted curve using the fitted parameters
+    elon_fit = fpf_function_aswo(xdata, phi_fit, speed_fit, tinit_fit)
+    
+    # Absolute launch time from tinit_fit
+    launch_time_fit = t_tai[0] + tinit_fit * u.s  # tinit_fit in seconds, t_tai[0] is an Astropy Time object
+
+    # Arrival time at 1 AU
+    #travel_time = AU / speed_fit  # in seconds
+    travel_time = 1.0 / speed_fit * u.s
+    arrival_time_fit = launch_time_fit + travel_time
+
+    # Convert to datetime for display
+    formatted_launch = launch_time_fit.datetime.strftime("%Y-%m-%dT%H:%M")
+    formatted_arrival = arrival_time_fit.datetime.strftime("%Y-%m-%dT%H:%M")
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(14, 6), facecolor='white')
+
+    ax.scatter(time, ydata, label="Data")
+    ax.plot(time, np.rad2deg(elon_fit), label="Fixed-Phi Fit")
+
+    ax.set_xlabel("Time (t)", fontsize=14)
+    ax.set_ylabel("Elongation [°]", fontsize=14)
+    ax.set_title("Fixed-Phi Fit", fontsize=16)
+
+    # Format the x-axis as dates
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+    ax.xaxis.set_major_locator(mdates.HourLocator(interval=12))
+    ax.legend(fontsize=14)
+
+    # Text annotations for the plot
+    p_rounded = round(np.rad2deg(phi_fit))
+    s_rounded = round(speed_fit * AU)
+    
+
+    results_text = 'Fitting results:'
+    phi_text = f'$\\phi$ = {p_rounded}°'
+    speed_text = f'V$_{{const.}}$ = {s_rounded} km s$^{{-1}}$'
+
+    underlined_effect = [path_effects.SimpleLineShadow(), path_effects.Normal()]
+
+    text_loc = round(len(time) * 0.7)
+    step = (round(max(ydata) - min(ydata))) / 10
+
+    # Coordinates for placing the text annotations
+    results_x, results_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata))
+    speed_x, speed_y = results_x, results_y - step
+    phi_x, phi_y = results_x, results_y - 2*step
+
+    ax.text(results_x, results_y, results_text, fontsize=16, path_effects=underlined_effect)
+    ax.text(phi_x, phi_y, phi_text, fontsize=14)
+    ax.text(speed_x, speed_y, speed_text, fontsize=14)
+
+    # Create output directory if it doesn't exist
+    if not os.path.exists(prediction_path):
+        os.mkdir(prediction_path)
+
+    plt.savefig(prediction_path + 'FPF_mab.png', dpi=150, bbox_inches='tight')
+    plt.clf()
+    plt.close()
+
+    # Print results to console
+    print('-------Fixed-Phi Fitting Results:-------')
+    print(f"|| Launch time: {formatted_launch}")
+    print(f"|| Fitted phi: {p_rounded} degrees from observer")
+    print(f"|| Fitted speed: {s_rounded} km/s")
+    print(f"|| 1 AU arrival: {formatted_arrival}")
+    print(f"|| Maximum elongation used: {round(max(ydata),1)} degrees")
+    print('----------------------------------------')
+
+    # Save results as a pickle file
+    fpf_results = {
+        'launch_time_FPF': launch_time_fit.datetime,
+        'phi_FPF': p_rounded,
+        'speed_FPF': s_rounded,
+        'arrivaltime_L1_FPF': arrival_time_fit.datetime
+    }
+
+    with open(prediction_path + 'FPF_results.pkl', 'wb') as file:
+        pickle.dump(fpf_results, file)
+
+    return fpf_results
+
+    
 def fpf(track, startcut, endcut, prediction_path):
     
     #df = pd.read_csv(track_data)
-    df = track
+    df = copy.deepcopy(track)
     elon = df["elongation"][startcut:endcut]
     std = df["std"][startcut:endcut]
 
     # Convert the "time" column to datetime objects
-    df["time"] = pd.to_datetime(df["time"])
+    #df["time"] = pd.to_datetime(df["time"])
 
     time_nu = df["time"][startcut:endcut]
 
@@ -261,7 +410,7 @@ def fpf(track, startcut, endcut, prediction_path):
     if not os.path.exists(prediction_path):
         os.mkdir(prediction_path)
 
-    plt.savefig(prediction_path+'FPF_.png', dpi=150, bbox_inches='tight')
+    plt.savefig(prediction_path+'FPF_tam.png', dpi=150, bbox_inches='tight')
     
     plt.clf()
     plt.close()
@@ -790,14 +939,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     # Calculate time differences needed for deriving the speeds
     time_diff = np.diff(tnum)
     
-    hit = 0
-    
-    #if runnumber == 137:
-     #   print('halfwidth:', np.rad2deg(halfwidth))
-      #  print('direction:', np.rad2deg(direction))
-       # print('f:', f)
-        #pdb.set_trace()
-    
+    hit = 0    
 
     if sta_available == 1 and hit_sta == 1:
         ############# STEREO-A #############
@@ -1276,7 +1418,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         for k in range(timegrid):
             
             if not movie:
-                k = 200
+                k = len(elon_rad)-1
             
             t = (np.arange(181) * np.pi/180) - direction
             t1 = (np.arange(181) * np.pi/180)
@@ -1444,62 +1586,67 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
             ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
 
-            if k < len(elon_rad)-1:
-                #print('k: ', k)
-                ######
-                # Calculate the ending point of the tangent
-                if HIobs == 'A':
+            #if k < len(elon_rad)-1:
+            #print('k: ', k)
+            ######
+            # Calculate the ending point of the tangent
+            if HIobs == 'A':
 
-                    end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+                end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
 
-                    # angle of end point of tangent
-                    if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-                        #print('version 1')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-                    else:
-                        #print('version 2')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                # angle of end point of tangent
+                if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+                    #print('version 1')
+                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                else:
+                    #print('version 2')
+                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
 
-                    if sta_lon < 0:
-                        end_angle = abs(beta) - abs(start_angle)
-                    else:
-                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
-                        
-                if HIobs == 'B':
+                if sta_lon < 0:
+                    end_angle = abs(beta) - abs(start_angle)
+                else:
+                    end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                    
+            if HIobs == 'B':
 
-                    end_radius = np.sqrt(tangent_length**2 + stb_r**2 - 2. * tangent_length * stb_r * np.cos(elon_rad[k]))
+                end_radius = np.sqrt(tangent_length**2 + stb_r**2 - 2. * tangent_length * stb_r * np.cos(elon_rad[k]))
 
-                    # angle of end point of tangent
-                    if np.cos(elon_rad[k]) > (stb_r/tangent_length): 
-                        #print('version 1')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-                    else:
-                        #print('version 2')
-                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                # angle of end point of tangent
+                if np.cos(elon_rad[k]) > (stb_r/tangent_length): 
+                    #print('version 1')
+                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                else:
+                    #print('version 2')
+                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
 
-                    if stb_lon < 0:
-                        end_angle = abs(beta) - abs(start_angle)
-                    else:
-                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                if stb_lon < 0:
+                    end_angle = abs(beta) - abs(start_angle)
+                else:
+                    end_angle = (abs(beta) - abs(start_angle)) * (-1)
 
-                # Calculate the coordinates of the line
-                line_x = np.array([start_angle, end_angle])
-                line_y = np.array([start_radius, end_radius])
-                # Plot the HI tangent
-                ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+            # Calculate the coordinates of the line
+            line_x = np.array([start_angle, end_angle])
+            line_y = np.array([start_radius, end_radius])
+            
+            # Plot the HI tangent
+            ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+            
+            #pdb.set_trace()
             
             if not movie:
                 if not det_plot:
                     break
                 
-            if det_plot and k==200:
+            if det_plot and k==(len(elon_rad)-1):
             #save single figure
+                
                 filename = prediction_path + 'ELEvoHI_HEE_m.jpg'
                 plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
                 if not movie:
                     fig.clf()
                     plt.close(fig)
                     break
+                
                 
             if movie:                
             #save frames
