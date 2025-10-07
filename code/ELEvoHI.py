@@ -62,8 +62,7 @@ def main():
     do_ensemble = config['do_ensemble']
     endtime = datetime.strptime(config['endtime'], "%Y-%m-%d %H:%M")
     starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
-    #event_path = os.path.join(config['track_path'], config['tracklength'])
-    event_path = config['track_path']
+    event_path = os.path.join(config['track_path'], config['tracklength'])
     
     lead_time = None
     
