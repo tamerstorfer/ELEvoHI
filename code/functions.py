@@ -640,7 +640,10 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     #pdb.set_trace()
             
     if det_plot:
-        fig, ax = plt.subplots(1, 1, figsize = (8,3), dpi = 300, facecolor='white')
+        sns.set_context('talk')
+        sns.set_style('darkgrid')
+        figdbm, ax = plt.subplots(1, 1, figsize = (8,3), dpi = 300, facecolor='white')
+        
 
         ax.set_title('ELEvoHI DBMfits', size = 16)
         ax.set_ylabel('CME Apex Speed [km s$^{-1}$]', fontsize = 14, labelpad = 0)
@@ -705,7 +708,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         
         # Use fixed y-axis limits
         y_lower = 0
-        y_upper = 1200
+        y_upper = 1500
 
         # Set the y-axis limits
         ax.set_ylim(y_lower, y_upper)
@@ -751,9 +754,9 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     
     if det_plot:
         filename = prediction_path + '/DBMfit.png' 
-        plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')       
-        fig.clf()
-        plt.close(fig)
+        plt.savefig(filename, dpi=300, facecolor=figdbm.get_facecolor(), edgecolor='none', bbox_inches='tight')       
+        figdbm.clf()
+        plt.close(figdbm)
 
 
     #for i in range(0,5):
@@ -1311,6 +1314,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     
     if det_plot:
         # Create a figure with two subplots (panels)
+        sns.set_context('talk')
+        sns.set_style('darkgrid')
         fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 12), facecolor='white')
 
         # Heliocentric distance
@@ -1401,24 +1406,31 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     fov_length = 1
     
     elon_rad = np.deg2rad(interp_elon)
-    
-    sns.set_context('talk')
-    sns.set_style('darkgrid')
-    fig = plt.figure(figsize=(10, 10))
-    backcolor = 'black'
+    #pdb.set_trace()
    
-    if movie:
+    if det_plot:
+        
+        sns.set_context('talk')
+        sns.set_style('darkgrid')
+        
         # Initialize your plot outside of the loop
-        print('Making frames.')
+        if movie:
+            print('Making frames.')
 
-        if os.path.isdir(prediction_path + '/frames') == False: os.mkdir(prediction_path + '/frames')
+            if os.path.isdir(prediction_path + '/frames') == False: os.mkdir(prediction_path + '/frames')
 
         # Loop over time frames
-    if movie or det_plot:
+    
         for k in range(timegrid):
             
-            if not movie:
-                k = len(elon_rad)-1
+            figmov = plt.figure(figsize=(10, 10))
+            backcolor = 'black'
+            
+            #if not movie:
+            #    k = len(elon_rad)-1
+            #    print('in if not movie')
+                
+            #pdb.set_trace()
             
             t = (np.arange(181) * np.pi/180) - direction
             t1 = (np.arange(181) * np.pi/180)
@@ -1438,7 +1450,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 break
 
             # Create a subplot for the current frame
-            ax = fig.add_subplot(projection='polar')
+            ax = figmov.add_subplot(projection='polar')
 
             # Set the title according to the time step
             ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
@@ -1486,8 +1498,9 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             # HI1 field of view:
             hi1_fov_start = np.deg2rad(4.)
             hi1_fov_end = np.deg2rad(24.)
-
-            #---- inner HI1 fov ------
+            
+            
+#---- inner HI1 fov ------
             if HIobs == 'A':
                 end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
                 
@@ -1586,79 +1599,78 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             ax.plot(line_x_hi2_inner, line_y_hi2_inner, color='gray', linestyle='-', linewidth=2, alpha=0.1)
             ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
 
-            #if k < len(elon_rad)-1:
+            if k < len(elon_rad)-1:
             #print('k: ', k)
             ######
             # Calculate the ending point of the tangent
-            if HIobs == 'A':
+                if HIobs == 'A':
 
-                end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
+                    end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
 
-                # angle of end point of tangent
-                if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
-                    #print('version 1')
-                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-                else:
-                    #print('version 2')
-                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                    # angle of end point of tangent
+                    if np.cos(elon_rad[k]) > (sta_r/tangent_length): 
+                        #print('version 1')
+                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                    else:
+                        #print('version 2')
+                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
 
-                if sta_lon < 0:
-                    end_angle = abs(beta) - abs(start_angle)
-                else:
-                    end_angle = (abs(beta) - abs(start_angle)) * (-1)
-                    
-            if HIobs == 'B':
+                    if sta_lon < 0:
+                        end_angle = abs(beta) - abs(start_angle)
+                    else:
+                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                        
+                if HIobs == 'B':
 
-                end_radius = np.sqrt(tangent_length**2 + stb_r**2 - 2. * tangent_length * stb_r * np.cos(elon_rad[k]))
+                    end_radius = np.sqrt(tangent_length**2 + stb_r**2 - 2. * tangent_length * stb_r * np.cos(elon_rad[k]))
 
-                # angle of end point of tangent
-                if np.cos(elon_rad[k]) > (stb_r/tangent_length): 
-                    #print('version 1')
-                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
-                else:
-                    #print('version 2')
-                    beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+                    # angle of end point of tangent
+                    if np.cos(elon_rad[k]) > (stb_r/tangent_length): 
+                        #print('version 1')
+                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+                    else:
+                        #print('version 2')
+                        beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
 
-                if stb_lon < 0:
-                    end_angle = abs(beta) - abs(start_angle)
-                else:
-                    end_angle = (abs(beta) - abs(start_angle)) * (-1)
+                    if stb_lon < 0:
+                        end_angle = abs(beta) - abs(start_angle)
+                    else:
+                        end_angle = (abs(beta) - abs(start_angle)) * (-1)
 
-            # Calculate the coordinates of the line
-            line_x = np.array([start_angle, end_angle])
-            line_y = np.array([start_radius, end_radius])
-            
-            # Plot the HI tangent
-            ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
-            
-            #pdb.set_trace()
-            
-            if not movie:
-                if not det_plot:
-                    break
+                # Calculate the coordinates of the line
+                line_x = np.array([start_angle, end_angle])
+                line_y = np.array([start_radius, end_radius])
                 
-            if det_plot and k==(len(elon_rad)-1):
+                # Plot the HI tangent
+                ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
+                
+            if k==np.round((0.5*len(elon_rad)-1)):
             #save single figure
-                
                 filename = prediction_path + 'ELEvoHI_HEE_m.jpg'
-                plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+                plt.savefig(filename, dpi=300, facecolor=figmov.get_facecolor(), edgecolor='none', bbox_inches='tight')
                 if not movie:
-                    fig.clf()
-                    plt.close(fig)
+                    figmov.clf()
+                    plt.close(figmov)
                     break
-                
-                
+    
             if movie:                
             #save frames
                 framestr = '%05i' % (k)
                 filename = prediction_path + '/frames/frame_' + framestr + '.jpg' 
-                plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
-                fig.clf()
-                plt.close(fig)
-
-        if movie:    
-            os.system('ffmpeg -r 60 -i ' + prediction_path + '/frames/frame_%05d.jpg -b:v 5000k -r 60 ' + prediction_path + '/movie.mp4 -y')
+                plt.savefig(filename, dpi=300, facecolor=figmov.get_facecolor(), edgecolor='none', bbox_inches='tight')
+                
+                figmov.clf()
+                plt.close(figmov)
+        
+        if movie:
+            os.system(
+                f'ffmpeg -framerate 60 -i "{prediction_path}/frames/frame_%05d.jpg" '
+                f'-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" '
+                f'-c:v libx264 -pix_fmt yuv420p -b:v 5000k -movflags +faststart '
+                f'"{prediction_path}/movie.mp4" -y'
+            )
     
+   
     return prediction
 
 def assess_prediction(prediction, target, is_time, is_speed):
