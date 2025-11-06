@@ -910,6 +910,7 @@ def main():
             else:
                 det_plot = False
         
+        #pdb.set_trace()
         ########################################################################
         # convert the time-elongation track to radial distance using ELCon
         
@@ -925,7 +926,7 @@ def main():
         if winds_valid[0] == 0:
             nofit.append(runnumber)
             continue
-        
+
         # make equidistant grid for ELEvo times, with 10 min resolution
 
         start_time = tinit
@@ -1127,8 +1128,6 @@ def main():
     txt_file = prediction_path + 'notes.txt'
     if os.path.exists(txt_file):
         os.remove(txt_file)
-        
-    #pdb.set_trace()
         
     if no_det_run:
         with open(txt_file, 'a') as file:
