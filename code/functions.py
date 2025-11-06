@@ -8,6 +8,7 @@ from scipy.interpolate import interp1d
 from datetime import datetime,timedelta
 import matplotlib.dates as mdates
 from astropy.time import Time as atime
+from astropy import units as u
 import matplotlib.patheffects as path_effects
 from astropy import constants as const
 from sunpy.coordinates import frames, get_horizons_coord
@@ -146,157 +147,150 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
     
     return track
 
-def fpf_function(xdata, phi, speed):
+def fpf_function_mab(xdata, phi, speed, launch_init):
     # function to fit time-elongation profile of CME
     # assumptions: constant speed, fixed direction
-    elon_fit = np.arctan((speed * xdata * np.sin(phi)) / (1. - speed * xdata * np.cos(phi)))
 
+    scrad = 1.0
+
+    xdata_adjusted  = xdata - launch_init
+
+    elon_fit = np.arctan((speed * xdata_adjusted * np.sin(phi)) / (scrad - speed * xdata_adjusted * np.cos(phi)))
+    
     return elon_fit
 
-def fpf(track, startcut, endcut, prediction_path):
+def fpf_mab(track, startcut, endcut, prediction_path):
+
+    df = track.copy()
     
-    #df = pd.read_csv(track_data)
-    df = track
+    # Slice elongation
     elon = df["elongation"][startcut:endcut]
-    std = df["std"][startcut:endcut]
-
-    # Convert the "time" column to datetime objects
-    df["time"] = pd.to_datetime(df["time"])
-
-    time_nu = df["time"][startcut:endcut]
-
-    # Convert the 'time' column to a numerical time array
-    time_n = time_nu.apply(lambda x: x.timestamp())
-
-    # calculate launch time of CME
-    launch_elon = 0
-
-    # Create an interpolating function to extrapolate time_num based on elon down to `launch_elon`
-    f = interp1d(elon, time_n, fill_value="extrapolate")
-
-    # Extrapolate time_num up to `desired_elon`
-    launch_time_n = f(launch_elon)
-    launch_time = np.datetime64('1970-01-01') + np.array(launch_time_n, dtype='timedelta64[s]')
-
+    
+    # Slice time
+    time_nu = np.array(df["time"][startcut:endcut])
+    
+    # time for plotting
     time = df["time"][startcut:endcut]
+    
+    # Convert to astropy Time objects
+    t_utc = atime(time_nu, scale="utc")
 
-    #fixed_timestamp = time.iloc[0] - pd.DateOffset(launch_time_num)
+    # Convert to TAI
+    t_tai = t_utc.tai
 
-    # Subtract the fixed timestamp from each element in the 'time' array
-    time_num = (time - launch_time).dt.total_seconds()
+    # Seconds relative to the first point in the slice
+    taitime = (t_tai - t_tai[0]).sec
 
+    # Normalized time axis
+    time_num = taitime - np.min(taitime)
+
+    # Output
     xdata = time_num
     ydata = elon
-    
     
     # Initial guess for parameters phi and speed
     phi_init = np.deg2rad(60.)
     speed_init = 500./AU 
-
-    bounds = ([0, 200./AU], [np.pi, 4000./AU])  # Example bounds: phi between 0 and pi/2, speed >= 0
-
+    launch_offset_init=-20.0*3600.0
+    
+    bounds = ([0, 200./AU, launch_offset_init], [np.pi, 4000./AU, 0.])  # Example bounds: phi between 0 and pi/2, speed >= 0
+    
     ydata_rad = np.deg2rad(ydata)
-
+    
     # Perform the curve fitting
-    params, covariance = curve_fit(fpf_function, xdata, ydata_rad, p0=[phi_init, speed_init], bounds=bounds)
 
-    # Extract the fitted parameters
-    phi_fit, speed_fit = params
+    try:
 
+        params, covariance = curve_fit(fpf_function_mab, xdata, ydata_rad, p0=[phi_init, speed_init, launch_offset_init], bounds=bounds)
+        phi_fit, speed_fit, tinit_fit = params     
+        
+    except ValueError:
+    
+        return np.nan, np.nan, [np.nan]*len(xdata)
+    
+   
+    
     # Generate the fitted curve using the fitted parameters
-    elon_fit = fpf_function(xdata, phi_fit, speed_fit)
+    elon_fit = fpf_function_mab(xdata, phi_fit, speed_fit, tinit_fit)
+    
+    # Absolute launch time from tinit_fit
+    launch_time_fit = t_tai[0] + tinit_fit * u.s  # tinit_fit in seconds, t_tai[0] is an Astropy Time object
 
-    # Create the plot and get the axes object
-    fig, ax = plt.subplots(figsize=(14, 6), facecolor='white')  # Adjust figure size as needed
+    # Arrival time at 1 AU
+    #travel_time = AU / speed_fit  # in seconds
+    travel_time = 1.0 / speed_fit * u.s
+    arrival_time_fit = launch_time_fit + travel_time
 
-    # Plot the data and fitted curve
+    # Convert to datetime for display
+    formatted_launch = launch_time_fit.datetime.strftime("%Y-%m-%dT%H:%M")
+    formatted_arrival = arrival_time_fit.datetime.strftime("%Y-%m-%dT%H:%M")
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(14, 6), facecolor='white')
+
     ax.scatter(time, ydata, label="Data")
     ax.plot(time, np.rad2deg(elon_fit), label="Fixed-Phi Fit")
 
-    # Set the x-axis label
     ax.set_xlabel("Time (t)", fontsize=14)
-
-    # Set the y-axis label
     ax.set_ylabel("Elongation [°]", fontsize=14)
-
-    # Set the title
     ax.set_title("Fixed-Phi Fit", fontsize=16)
 
-    # Format the datetime axis labels
+    # Format the x-axis as dates
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-
-    # Customize the x-axis ticks for 12-hour intervals
-    hour_locator = mdates.HourLocator(interval=12)
-    ax.xaxis.set_major_locator(hour_locator)
-
+    ax.xaxis.set_major_locator(mdates.HourLocator(interval=12))
     ax.legend(fontsize=14)
 
+    # Text annotations for the plot
     p_rounded = round(np.rad2deg(phi_fit))
     s_rounded = round(speed_fit * AU)
+    
 
     results_text = 'Fitting results:'
     phi_text = f'$\\phi$ = {p_rounded}°'
     speed_text = f'V$_{{const.}}$ = {s_rounded} km s$^{{-1}}$'
 
-    underlined_effect = [path_effects.SimpleLineShadow(),
-                        path_effects.Normal()]
-    text_loc = round(len(time)*0.7)
-    
-    step = (round(max(ydata) - min(ydata)))/10
+    underlined_effect = [path_effects.SimpleLineShadow(), path_effects.Normal()]
+
+    text_loc = round(len(time) * 0.7)
+    step = (round(max(ydata) - min(ydata))) / 10
 
     # Coordinates for placing the text annotations
     results_x, results_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata))
-    speed_x, speed_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - step
-    phi_x, phi_y = time[text_loc], round(max(ydata) - min(ydata)) * 0.5 + round(min(ydata)) - 2*step
+    speed_x, speed_y = results_x, results_y - step
+    phi_x, phi_y = results_x, results_y - 2*step
 
-    # Text annotations to the plot
     ax.text(results_x, results_y, results_text, fontsize=16, path_effects=underlined_effect)
     ax.text(phi_x, phi_y, phi_text, fontsize=14)
     ax.text(speed_x, speed_y, speed_text, fontsize=14)
 
+    # Create output directory if it doesn't exist
     if not os.path.exists(prediction_path):
         os.mkdir(prediction_path)
 
-    plt.savefig(prediction_path+'FPF_.png', dpi=150, bbox_inches='tight')
-    
+    plt.savefig(prediction_path + 'FPF_mab.png', dpi=150, bbox_inches='tight')
     plt.clf()
     plt.close()
-    
-    # Arrival time at 1 AU
 
-    travel_time = AU/s_rounded
-
-    FPF_Earth_arrival_np = np.datetime64('1970-01-01') + np.array((launch_time_n + travel_time), dtype='timedelta64[s]')
-    # Convert FPF_Earth_arrival_np to a regular datetime object
-    FPF_Earth_arrival = FPF_Earth_arrival_np.astype(datetime)
-    formatted_arrival = FPF_Earth_arrival.strftime("%Y-%m-%dT%H:%M")
-    launch = launch_time.astype(datetime)
-    formatted_launch = launch.strftime("%Y-%m-%dT%H:%M")
-
-    # Print the fitted parameters
-    print('    ')
+    # Print results to console
     print('-------Fixed-Phi Fitting Results:-------')
+    print(f"|| Launch time: {formatted_launch}")
+    print(f"|| Fitted phi: {p_rounded} degrees from observer")
+    print(f"|| Fitted speed: {s_rounded} km/s")
+    print(f"|| 1 AU arrival: {formatted_arrival}")
+    print(f"|| Maximum elongation used: {round(max(ydata),1)} degrees")
     print('----------------------------------------')
-    print("|| Launch time:", formatted_launch)
-    print("|| Fitted phi:", round(np.rad2deg(phi_fit)), 'degrees from observer')
-    print("|| Fitted speed:", round(speed_fit*AU), 'km/s')
-    print("|| 1 AU arrival:", formatted_arrival)
-    print("|| Maximum elongation used: ", round(max(ydata),1), 'degrees')
-    print('----------------------------------------')
-    print('    ')
-    
-    # save results 
 
+    # Save results as a pickle file
     fpf_results = {
-        'launch_time_FPF': launch_time,
-        'phi_FPF': round(np.rad2deg(phi_fit)),
-        'speed_FPF': round(speed_fit * AU),
-        'arrivaltime_L1_FPF': FPF_Earth_arrival
+        'launch_time_FPF': launch_time_fit.datetime,
+        'phi_FPF': p_rounded,
+        'speed_FPF': s_rounded,
+        'arrivaltime_L1_FPF': arrival_time_fit.datetime
     }
 
-    with open(prediction_path + 'FPF_results.pkl', 'wb') as file:
+    with open(prediction_path + 'FPF_results_mab.pkl', 'wb') as file:
         pickle.dump(fpf_results, file)
-    
+
     return fpf_results
 
 def ELCon(elon, d, phi, hwidth, f):
@@ -358,20 +352,17 @@ def cost_function(params, *args):
     vinit, swspeed, rinit, ydata, x = args
     predicted = fitdbm(x, gamma, vinit, swspeed, rinit)
 
-    return np.median(np.sqrt((ydata - predicted) ** 2 ))# * logistic_growth(ydata,0.3)/logistic_growth(ydata,0.3).max() )
+    return np.mean(np.abs(ydata - predicted)) #np.median(np.sqrt((ydata - predicted) ** 2 ))# * logistic_growth(ydata,0.3)/logistic_growth(ydata,0.3).max() )
 
 def cost_functionneg(params, *args):
     gamma = params
     vinit, swspeed, rinit, ydata, x = args
     predicted = fitdbmneg(x, gamma, vinit, swspeed, rinit)
 
-    return np.median(np.sqrt((ydata - predicted) ** 2 ))
+    return np.mean(np.abs(ydata - predicted)) #np.median(np.sqrt((ydata - predicted) ** 2 ))
 
-# def cost_functionneg(gamma):
-#     predicted = fitdbmneg(xdata, gamma)
-#     return np.sum((ydata - predicted) ** 2)
 
-def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfit = 20, silent = 1, max_residual = 1.5, max_gamma = 3e-7):
+def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfit = 20, silent = 1, max_residual = 1.5, max_gamma = 2e-7):
     """ fit the ELCon time-distance track using the drag-based equation of motion from Vrsnak et al. (2013) """
     global  runnumber
 
@@ -380,8 +371,6 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     # However, it might always be necessary that a forecaster reviews the fitting because not each HI kinematics can
     # be fitted from each startpoint on.
 
-    # startfit = 3 -> default settings
-    # endfit = 18 -> default settings
     # Convert datetime values to seconds since the first element
     time_num = (time - time.iloc[0]).dt.total_seconds()
 
@@ -404,12 +393,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     xdata = speedtime.values
     ydata = distance_km
 
-    #testgamma = 1.7863506087704678e-08 
-    #testwind  = 200
-
-    #testy = (1/testgamma) * np.log(1 + testgamma*(vinit - testwind) * xdata) + testwind*xdata + rinit
-
-    winds = np.arange(200, 775, 25)
+    winds = np.arange(250, 775, 25)
     fit = np.zeros((len(winds), len(xdata)))
     fitspeed = np.zeros((len(winds), len(xdata)))
     residuals = np.zeros((len(winds), len(xdata)))
@@ -418,7 +402,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     
     # Initial guess for the parameter gamma
     initial_guess = 1e-7
-    k= 0.3
+    #k= 0.3
 
     # do a fit for each wind speed separately and plot valid fits
     for i in range(len(winds)):
@@ -426,7 +410,6 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         if vinit > swspeed:
             # Perform the optimization
             result = minimize(cost_function, initial_guess, args=(vinit,swspeed,rinit,ydata,xdata), method='Nelder-Mead')
-            # gamma_fit, pcov = curve_fit(fitdbm, xdata, ydata,p0=initial_guess,method="dogbox")
             # Print the fitted parameter
             if silent == 0:
                 print('=====') 
@@ -479,14 +462,14 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
     for i in range(len(winds)):
         if success[i]:
-            res[i] = residuals[i,0] #np.mean(residuals[i,:])
+            res[i] = np.mean(residuals[i,-3]) #np.mean(residuals[i,:])
             #print(res[i]/rsun)
         else:
             res[i] = np.nan
-    
-    #pdb.set_trace()
             
     if det_plot:
+        sns.set_context('talk')
+        sns.set_style('darkgrid')
         fig, ax = plt.subplots(1, 1, figsize = (8,3), dpi = 300, facecolor='white')
 
         ax.set_title('ELEvoHI DBMfits', size = 16)
@@ -546,6 +529,14 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     if det_plot:
         ax.plot(distance_rsun, speed, 'o', label='data', c='black', markersize=5)
         
+        elcon_out = pd.DataFrame({
+                "time": time,
+                "R": distance_rsun,
+                "V": speed
+            })
+        
+        elcon_out.to_csv(prediction_path + "ELCon.csv", index=False, header=["time", "heliocentric distance", "speed"])
+        
         # Calculate y-axis limits
         # y_lower = min(speed) - 100
         # y_upper = max(speed) + 100
@@ -589,12 +580,10 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     print('')
 
     # Get the indices that would sort the array based on absolute values
-    sorted_indices = np.argsort(res_valid)
+    sorted_indices = np.argsort(np.abs(res_valid))
     gamma_valid = gamma_valid[sorted_indices]
     res_valid = res_valid[sorted_indices]
     winds_valid = winds_valid[sorted_indices]
-  
-    #pdb.set_trace()
     
     if det_plot:
         filename = prediction_path + '/DBMfit.png' 
@@ -602,17 +591,6 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         fig.clf()
         plt.close(fig)
 
-
-    #for i in range(0,5):
-    #    swspeed = winds_valid[i]
-    #    fit = fitdbm(xdata,gamma_valid[i],vinit,swspeed,rinit)
-    #    plt.plot(xdata,fit,c=mpl.cm.tab20(i+1),label=str(swspeed)+"  "+str(round(gamma_valid[i]*10**8,2))+" "+str(res_valid[i]))
-    #plt.plot(xdata,ydata,label="track")
-    ## plt.fill_between(xdata, ydata, fit)
-    #plt.legend()
-    #plt.show()
-
-    
     return gamma_valid, winds_valid, res_valid, tinit, rinit, vinit, swspeed, xdata, ydata
 
 def elevo_analytic(R, f, halfwidth, delta, runnumber, out=False, plot=False):
@@ -786,14 +764,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     # Calculate time differences needed for deriving the speeds
     time_diff = np.diff(tnum)
     
-    hit = 0
-    
-    #if runnumber == 137:
-     #   print('halfwidth:', np.rad2deg(halfwidth))
-      #  print('direction:', np.rad2deg(direction))
-       # print('f:', f)
-        #pdb.set_trace()
-    
+    hit = 0    
 
     if sta_available == 1 and hit_sta == 1:
         ############# STEREO-A #############
@@ -1165,6 +1136,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     
     if det_plot:
         # Create a figure with two subplots (panels)
+        sns.set_context('talk')
+        sns.set_style('darkgrid')
         fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(10, 12), facecolor='white')
 
         # Heliocentric distance
@@ -1255,24 +1228,31 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     fov_length = 1
     
     elon_rad = np.deg2rad(interp_elon)
-    
-    sns.set_context('talk')
-    sns.set_style('darkgrid')
-    fig = plt.figure(figsize=(10, 10))
-    backcolor = 'black'
+    #pdb.set_trace()
    
-    if movie:
+    if det_plot:
+        
+        sns.set_context('talk')
+        sns.set_style('darkgrid')
+        
         # Initialize your plot outside of the loop
-        print('Making frames.')
+        if movie:
+            print('Making frames.')
 
-        if os.path.isdir(prediction_path + '/frames') == False: os.mkdir(prediction_path + '/frames')
+            if os.path.isdir(prediction_path + '/frames') == False: os.mkdir(prediction_path + '/frames')
 
         # Loop over time frames
-    if movie or det_plot:
+    
         for k in range(timegrid):
             
-            if not movie:
-                k = 200
+            figmov = plt.figure(figsize=(10, 10))
+            backcolor = 'black'
+            
+            #if not movie:
+            #    k = len(elon_rad)-1
+            #    print('in if not movie')
+                
+            #pdb.set_trace()
             
             t = (np.arange(181) * np.pi/180) - direction
             t1 = (np.arange(181) * np.pi/180)
@@ -1292,7 +1272,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 break
 
             # Create a subplot for the current frame
-            ax = fig.add_subplot(projection='polar')
+            ax = figmov.add_subplot(projection='polar')
 
             # Set the title according to the time step
             ax.set_title(time_array[k].strftime('%Y-%m-%d %H:%M'))
@@ -1340,8 +1320,9 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             # HI1 field of view:
             hi1_fov_start = np.deg2rad(4.)
             hi1_fov_end = np.deg2rad(24.)
-
-            #---- inner HI1 fov ------
+            
+            
+#---- inner HI1 fov ------
             if HIobs == 'A':
                 end_hi1_innerradius = np.sqrt(fov_length**2 + sta_r**2 - 2. * fov_length * sta_r * np.cos(hi1_fov_start))
                 
@@ -1441,9 +1422,9 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             ax.plot(line_x_hi2_outer, line_y_hi2_outer, color='gray', linestyle='-', linewidth=2, alpha=0.1)
 
             if k < len(elon_rad)-1:
-                #print('k: ', k)
-                ######
-                # Calculate the ending point of the tangent
+            #print('k: ', k)
+            ######
+            # Calculate the ending point of the tangent
                 if HIobs == 'A':
 
                     end_radius = np.sqrt(tangent_length**2 + sta_r**2 - 2. * tangent_length * sta_r * np.cos(elon_rad[k]))
@@ -1481,34 +1462,39 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 # Calculate the coordinates of the line
                 line_x = np.array([start_angle, end_angle])
                 line_y = np.array([start_radius, end_radius])
+                
                 # Plot the HI tangent
                 ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2)
-            
-            if not movie:
-                if not det_plot:
-                    break
                 
-            if det_plot and k==200:
+            if k==np.round((0.5*len(elon_rad)-1)):
             #save single figure
                 filename = prediction_path + 'ELEvoHI_HEE_m.jpg'
-                plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
+                plt.savefig(filename, dpi=300, facecolor=figmov.get_facecolor(), edgecolor='none', bbox_inches='tight')
                 if not movie:
-                    fig.clf()
-                    plt.close(fig)
+                    figmov.clf()
+                    plt.close(figmov)
                     break
-                
+    
             if movie:                
             #save frames
                 framestr = '%05i' % (k)
                 filename = prediction_path + '/frames/frame_' + framestr + '.jpg' 
-                plt.savefig(filename, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none', bbox_inches='tight')
-                fig.clf()
-                plt.close(fig)
-
-        if movie:    
-            os.system('ffmpeg -r 60 -i ' + prediction_path + '/frames/frame_%05d.jpg -b:v 5000k -r 60 ' + prediction_path + '/movie.mp4 -y')
+                plt.savefig(filename, dpi=300, facecolor=figmov.get_facecolor(), edgecolor='none', bbox_inches='tight')
+                
+                figmov.clf()
+                plt.close(figmov)
+        
+        if movie:
+            os.system(
+                f'ffmpeg -framerate 60 -i "{prediction_path}/frames/frame_%05d.jpg" '
+                f'-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" '
+                f'-c:v libx264 -pix_fmt yuv420p -b:v 5000k -movflags +faststart '
+                f'"{prediction_path}/movie.mp4" -y'
+            )
     
+   
     return prediction
+
 
 def assess_prediction(prediction, target, is_time, is_speed):
     

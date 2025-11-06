@@ -24,7 +24,7 @@ import shutil
 import pdb
 import time as ti
 
-from functions import load_config,  merge_tracks,  fpf, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble
+from functions import load_config,  merge_tracks, fpf_mab, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble
 
 # to do:
 # if no start and endtimes are given, use the whole track
@@ -66,10 +66,12 @@ def main():
     lead_time = None
     
     year = eventdate[:4]
+    
     #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
     #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
     #event_path = '../../' + eventdate + '/'
-    event_path = '/Users/tanja/CME_Tracking/Enhanced/'
+    #event_path = '/Users/tanja/CME_Tracking/'
+    event_path = config['track_path'] + '/timestep/'
     prediction_path = pred_path + eventdate + '_' + HIobs + '/'
 
     # logging runnumbers for which no DBMfit converges
@@ -84,14 +86,8 @@ def main():
     # includes standard deviation and saves a figure to the predictions folder
     newtime_axis = pd.date_range(start=starttime, end=endtime, freq=str(40)+"min")
 
-    #pdb.set_trace()
 
     track = merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=newtime_axis)
-    # ind = np.argwhere(track["time"]<endtime)[:,0]
-    # times = track["time"].values[ind]
-    # elong = track["elongation"].values[ind]
-    # stds  = track["std"].values[ind]
-    # track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
 
 
     #track = merge_tracks(event_path.replace("tanja", "david"), prediction_path.replace("tanja", "david"), cadence=40, new_time_axis=newtime_axis)
@@ -103,16 +99,7 @@ def main():
     
     startcut = track["time"].searchsorted(starttime)
     endcut = track["time"].searchsorted(endtime) - 1
-
-    # plt.plot(track["time"],track["elongation"],label="tanja")
-    # plt.plot(track2["time"],track2["elongation"],label="david")
-    # plt.legend()
-    # plt.show()
-
-
-
-
-    
+ 
     # ELEvoHI ensemble
     # Define the range of values for each parameter to build the ensemble
     if do_ensemble:
@@ -124,7 +111,7 @@ def main():
         f_step = config['f_step']
     
     if phi_FPF:
-        fpf_fit = fpf(track, startcut, endcut, prediction_path)
+        fpf_fit = fpf_mab(track, startcut, endcut, prediction_path)
         phi = fpf_fit['phi_FPF']
         if do_ensemble:
             start_phi = np.deg2rad(fpf_fit['phi_FPF'] - config['phi_FPF_range'][0])
@@ -155,8 +142,6 @@ def main():
         lambda_range = np.linspace(start_lambda, end_lambda, num_points_lambda)
         phi_range = np.linspace(start_phi, end_phi, num_points_phi)
         aspect_range = np.linspace(start_f, end_f, num_points_f)
-        
-        #pdb.set_trace()
         
         # Create a grid of parameter combinations
         lambda_grid, phi_grid, f_grid = np.meshgrid(lambda_range, phi_range, aspect_range, indexing='ij')

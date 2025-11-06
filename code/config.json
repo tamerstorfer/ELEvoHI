@@ -1,37 +1,38 @@
 {
-    "basic_path": "../../",
-    "eventdate": "20201207",
-    "HIobs": "A",
-    "mode": "science",
-    "do_ensemble": true,
-    "phi_FPF": false,
-    "phi_FPF_range": [
-    10,
-    10
-    ],
-    "phi_manual": [
-    72,
-    62,
-    82
-    ],
-    "phi_step": 2,
-    "f": [
-    0.8,
-    0.7,
-    1
-    ],
-    "f_step": 0.1,
-    "halfwidth": [
-    52,
-    42,
-    62
-    ],
-    "halfwidth_step": 5,
-    "starttime":"2020-12-07 18:43",
-    "endtime":"2020-12-09 12:00",
-    "outer_system": false,
-    "movie": false,
-    "silent": true,
-    "L1_ist_obs": "2020-12-10 02:10",
-    "L1_isv_obs": 481
-    }
+"basic_path": "../../",
+"track_path": "/Users/tanja/CME_Tracking/tracks/20080602_A",
+"eventdate": "20080602",
+"HIobs": "A",
+"mode": "science",
+"do_ensemble": true,
+"phi_FPF": false,
+"phi_FPF_range": [
+10,
+10
+],
+"phi_manual": [
+75,
+65,
+85
+],
+"phi_step": 2,
+"f": [
+0.8,
+0.7,
+1
+],
+"f_step": 0.1,
+"halfwidth": [
+35,
+25,
+45
+],
+"halfwidth_step": 5,
+"starttime": "2008-06-02 11:18",
+"endtime": "2008-06-06 09:58",
+"outer_system": false,
+"movie": false,
+"silent": true,
+"STEREOB_ist_obs": "2008-06-06 22:00",
+"STEREOB_isv_obs": 403
+}
