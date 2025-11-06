@@ -1,8 +1,8 @@
 {
 "basic_path": "../../",
-"track_path": "/Users/tanja/CME_Tracking/tracks/HCME_A_20210529_01",
-"tracklength": "timestep_6/",
-"eventdate": "20210529",
+"track_path": "/Users/tanja/CME_Tracking/tracks/20080602_A",
+"eventdate": "20080602",
+"tracklength": "timestep/",
 "HIobs": "A",
 "mode": "science",
 "do_ensemble": true,
@@ -12,9 +12,9 @@
 10
 ],
 "phi_manual": [
-114,
-104,
-124
+75,
+65,
+85
 ],
 "phi_step": 2,
 "f": [
@@ -24,16 +24,16 @@
 ],
 "f_step": 0.1,
 "halfwidth": [
-52,
-42,
-62
+35,
+25,
+45
 ],
 "halfwidth_step": 5,
-"starttime": "2021-05-29 01:18",
-"endtime": "2021-05-30 13:18",
+"starttime": "2008-06-02 11:18",
+"endtime": "2008-06-06 09:58",
 "outer_system": false,
 "movie": false,
 "silent": true,
-"L1_ist_obs": "2021-06-02 12:20",
-"L1_isv_obs": 308
+"STEREOB_ist_obs": "2008-06-06 22:00",
+"STEREOB_isv_obs": 403
 }

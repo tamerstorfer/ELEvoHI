@@ -511,7 +511,7 @@ def cost_function(params, *args):
     vinit, swspeed, rinit, ydata, x = args
     predicted = fitdbm(x, gamma, vinit, swspeed, rinit)
 
-    return np.median(np.abs(ydata - predicted))# * logistic_growth(ydata,0.3)/logistic_growth(ydata,0.3).max() )
+    return np.mean(np.abs(ydata - predicted))# * logistic_growth(ydata,0.3)/logistic_growth(ydata,0.3).max() )
 
 
 def cost_functionneg(params, *args):
@@ -519,7 +519,7 @@ def cost_functionneg(params, *args):
     vinit, swspeed, rinit, ydata, x = args
     predicted = fitdbmneg(x, gamma, vinit, swspeed, rinit)
     #np.median(np.sqrt((ydata - predicted) ** 2 ))
-    return np.median(np.abs(ydata - predicted))
+    return np.mean(np.abs(ydata - predicted))
 
 # def cost_functionneg(gamma):
 #     predicted = fitdbmneg(xdata, gamma)
@@ -563,7 +563,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
 
     #testy = (1/testgamma) * np.log(1 + testgamma*(vinit - testwind) * xdata) + testwind*xdata + rinit
 
-    winds = np.arange(400, 775, 25)
+    winds = np.arange(250, 775, 25)
     fit = np.zeros((len(winds), len(xdata)))
     fitspeed = np.zeros((len(winds), len(xdata)))
     residuals = np.zeros((len(winds), len(xdata)))
@@ -752,7 +752,7 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     print('')
 
     # Get the indices that would sort the array based on absolute values
-    sorted_indices = np.argsort(res_valid)
+    sorted_indices = np.argsort(np.abs(res_valid))
     gamma_valid = gamma_valid[sorted_indices]
     res_valid = res_valid[sorted_indices]
     winds_valid = winds_valid[sorted_indices]
@@ -764,16 +764,6 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         plt.savefig(filename, dpi=300, facecolor=figdbm.get_facecolor(), edgecolor='none', bbox_inches='tight')       
         figdbm.clf()
         plt.close(figdbm)
-
-
-    #for i in range(0,5):
-    #    swspeed = winds_valid[i]
-    #    fit = fitdbm(xdata,gamma_valid[i],vinit,swspeed,rinit)
-    #    plt.plot(xdata,fit,c=mpl.cm.tab20(i+1),label=str(swspeed)+"  "+str(round(gamma_valid[i]*10**8,2))+" "+str(res_valid[i]))
-    #plt.plot(xdata,ydata,label="track")
-    ## plt.fill_between(xdata, ydata, fit)
-    #plt.legend()
-    #plt.show()
 
     
     return gamma_valid, winds_valid, res_valid, tinit, rinit, vinit, swspeed, xdata, ydata
