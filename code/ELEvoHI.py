@@ -24,7 +24,7 @@ import shutil
 import pdb
 import time as ti
 
-from functions import load_config,  merge_tracks, fpf_mab, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble
+from functions import load_config,  merge_tracks,  fpf, fpf_mab, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble, set_silent, silent_print
 
 # to do:
 # if no start and endtimes are given, use the whole track
@@ -46,6 +46,8 @@ def main():
     rsun = const.R_sun.to_value('km')
 
     config = load_config('config.json')
+    
+    set_silent(config['silent'])
 
     basic_path = config['basic_path']
     pred_path = basic_path + 'ELEvoHI/predictions/'
@@ -58,21 +60,20 @@ def main():
     halfwidth = config['halfwidth'][0]
     outer_system = config['outer_system']
     movie = config['movie']
-    silent = config['silent']
     do_ensemble = config['do_ensemble']
     endtime = datetime.strptime(config['endtime'], "%Y-%m-%d %H:%M")
     starttime = datetime.strptime(config['starttime'], "%Y-%m-%d %H:%M")
+    event_path = os.path.join(config['track_path']+'/')
+    prediction_path = pred_path + eventdate + '_' + HIobs + '/'
     
     lead_time = None
     
     year = eventdate[:4]
-    
-    #event_path = basic_path + 'STEREO-HI-Data-Processing/data/stereo_processed/jplot/' + HIobs + '/' + mode + '/hi1hi2/' + year + '/Tracks/' + eventdate + '/'
-    #event_path = '/Users/tanja/Documents/work/main/HIDA_paper/David_CMEs/ELEvoHI_readables/' + eventdate + '/'
-    #event_path = '../../' + eventdate + '/'
-    #event_path = '/Users/tanja/CME_Tracking/'
-    event_path = config['track_path'] + '/timestep/'
-    prediction_path = pred_path + eventdate + '_' + HIobs + '/'
+
+    # Create the folder if it doesn't exist
+    os.makedirs(prediction_path, exist_ok=True)
+
+
 
     # logging runnumbers for which no DBMfit converges
     nofit = []
@@ -84,22 +85,52 @@ def main():
     
     # combines the time-elongation tracks into one average track on a equitemporal time-axis
     # includes standard deviation and saves a figure to the predictions folder
-    newtime_axis = pd.date_range(start=starttime, end=endtime, freq=str(40)+"min")
-
-
-    track = merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=newtime_axis)
-
-
-    #track = merge_tracks(event_path.replace("tanja", "david"), prediction_path.replace("tanja", "david"), cadence=40, new_time_axis=newtime_axis)
-    ind = np.argwhere(track["time"]<endtime)[:,0]
-    times  = track["time"].values[ind]
-    elong  = track["elongation"].values[ind]
-    stds   = track["std"].values[ind]
-    track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
+    one_track = 0
+    #aligned_track = 0
+    aligned_track = config['track_path']
+    #aligned_track = '/Users/tanja/CME_Tracking/tracks_everyday/20251109_A/2025-11-09T07_24_00-CME-001.csv'
+    #aligned_track = '/Users/tanja/CME_Tracking/tracks_everyday/20251110_A/2025-11-10T09_36_00-CME-001.csv'
+    #aligned_track = '/Users/tanja/CME_Tracking/tracks/20251107_A/aligned_tracks/CME2/interpolated_track/mean_track.csv'
+    #aligned_track = '/Users/tanja/CME_Tracking/tracks/20251107_A/aligned_tracks/CME3/interpolated_track/mean_track.csv'
+    #aligned_track = '/Users/tanja/CME_Tracking/tracks/20251107_A/aligned_tracks/CME4/interpolated_track/mean_track.csv'
     
-    startcut = track["time"].searchsorted(starttime)
-    endcut = track["time"].searchsorted(endtime) - 1
- 
+    if not one_track:
+        newtime_axis = pd.date_range(start=starttime, end=endtime, freq=str(40)+"min")
+        track = merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=newtime_axis)
+        #ind = np.argwhere(track["time"]<endtime)[:,0]
+        ind = track["time"] <= endtime
+        times  = track["time"].values[ind]
+        elong  = track["elongation"].values[ind]
+        stds   = track["std"].values[ind]
+        track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})
+        startcut = track["time"].searchsorted(starttime)
+        endcut = track["time"].searchsorted(endtime) - 1
+    else:
+        track = pd.read_csv(aligned_track)
+        track["time"] = pd.to_datetime(track["time"])
+        ind = np.argwhere(track["time"]<endtime)[:,0]
+        times  = track["time"].values[ind]
+        elong  = track["elongation"].values[ind]
+        stds   = track["std"].values[ind]
+        track = pd.DataFrame({'time': times, 'elongation': elong, 'std': stds})   
+        startcut = track["time"].searchsorted(starttime)
+        endcut = track["time"].searchsorted(endtime)
+        track = track.iloc[startcut:endcut]
+        startcut = 0
+        endcut = len(track) - 1
+        track = track.reset_index(drop=True)
+      
+
+        print("\n" + "=" * 55)
+        print("                 TRACK RANGE USED")
+        print("=" * 55)
+        print(f"{'':18} {'Start':>15} {'End':>15}")
+        print("-" * 55)
+        print(f"{'Index':18} {startcut:>15} {endcut:>15}")
+        print(f"{'Time':18} {str(track.loc[startcut, 'time']):>15} {str(track.loc[endcut, 'time']):>15}")
+        print(f"{'Elongation [deg]':18} {track.loc[startcut, 'elongation']:>15.2f} {track.loc[endcut, 'elongation']:>15.2f}")
+        print("=" * 55 + "\n")
+    
     # ELEvoHI ensemble
     # Define the range of values for each parameter to build the ensemble
     if do_ensemble:
@@ -111,6 +142,7 @@ def main():
         f_step = config['f_step']
     
     if phi_FPF:
+        #fpf_fit = fpf(track, startcut, endcut, prediction_path)
         fpf_fit = fpf_mab(track, startcut, endcut, prediction_path)
         phi = fpf_fit['phi_FPF']
         if do_ensemble:
@@ -142,6 +174,8 @@ def main():
         lambda_range = np.linspace(start_lambda, end_lambda, num_points_lambda)
         phi_range = np.linspace(start_phi, end_phi, num_points_phi)
         aspect_range = np.linspace(start_f, end_f, num_points_f)
+        
+        #pdb.set_trace()
         
         # Create a grid of parameter combinations
         lambda_grid, phi_grid, f_grid = np.meshgrid(lambda_range, phi_range, aspect_range, indexing='ij')
@@ -562,14 +596,14 @@ def main():
     for halfwidth, phi, f in zip(lambda_values, phi_values, f_values):
         
         if do_ensemble:
-            print('Parameters for this ensemble member:')
-            print('phi: ', round(np.rad2deg(phi)))
-            print('halfwidth: ', round(np.rad2deg(halfwidth)))
-            print('inverse ellipse aspect ratio: ', round(f, 1))
+            silent_print('Parameters for this ensemble member:')
+            silent_print('phi: ', round(np.rad2deg(phi)))
+            silent_print('halfwidth: ', round(np.rad2deg(halfwidth)))
+            silent_print('inverse ellipse aspect ratio: ', round(f, 1))
             runnumber = runnumber + 1
-            print('runnumber: ', runnumber)
+            silent_print('runnumber: ', runnumber)
         else:
-            print('ELEvoHI is in single mode.')
+            silent_print('ELEvoHI is in single mode.')
             phi = det_run[0]
             f = det_run[1]
             halfwidth = det_run[2]
@@ -719,8 +753,7 @@ def main():
         # print deltas for each target and check for hits
 
         if sta_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, STEREO-A): ', np.rad2deg(delta_sta))
+            silent_print('Delta(CME apex, STEREO-A): ', np.rad2deg(delta_sta))
             if round(np.rad2deg(np.abs(delta_sta)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_sta = 1
             else:
@@ -729,8 +762,7 @@ def main():
             hit_sta = 0
 
         if psp_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, Parker Solar Probe): ', np.rad2deg(delta_psp))
+            silent_print('Delta(CME apex, Parker Solar Probe): ', np.rad2deg(delta_psp))
             if round(np.rad2deg(np.abs(delta_psp)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_psp = 1
             else:
@@ -739,8 +771,7 @@ def main():
             hit_psp = 0
 
         if solo_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, SolO): ', np.rad2deg(delta_solo))
+            silent_print('Delta(CME apex, SolO): ', np.rad2deg(delta_solo))
             if round(np.rad2deg(np.abs(delta_solo)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_solo = 1
             else:
@@ -749,8 +780,7 @@ def main():
             hit_solo = 0
 
         if bepi_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, BepiColombo): ', np.rad2deg(delta_bepi))
+            silent_print('Delta(CME apex, BepiColombo): ', np.rad2deg(delta_bepi))
             if round(np.rad2deg(np.abs(delta_bepi)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_bepi = 1
             else:
@@ -759,8 +789,7 @@ def main():
             hit_bepi = 0
 
         if stb_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, STEREO-B): ', np.rad2deg(delta_stb))
+            silent_print('Delta(CME apex, STEREO-B): ', np.rad2deg(delta_stb))
             if round(np.rad2deg(np.abs(delta_stb)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_stb = 1
             else:
@@ -769,8 +798,7 @@ def main():
             hit_stb = 0
 
         if vex_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, Venus Express): ', np.rad2deg(delta_vex))
+            silent_print('Delta(CME apex, Venus Express): ', np.rad2deg(delta_vex))
             if round(np.rad2deg(np.abs(delta_vex)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_vex = 1
             else:
@@ -779,8 +807,7 @@ def main():
             hit_vex = 0
                 
         if mes_available == 1:
-            if silent == 0:
-                print('Delta(CME apex, MESSENGER: ', np.rad2deg(delta_mes))
+            silent_print('Delta(CME apex, MESSENGER: ', np.rad2deg(delta_mes))
             if round(np.rad2deg(np.abs(delta_mes)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_mes = 1
             else:
@@ -788,40 +815,35 @@ def main():
         else:
             hit_mes = 0
             
-        if silent == 0:
-                print('Delta(CME apex, Mercury): ', np.rad2deg(delta_mercury))
+            silent_print('Delta(CME apex, Mercury): ', np.rad2deg(delta_mercury))
 
         if round(np.rad2deg(np.abs(delta_mercury)), 2) < round(np.rad2deg(halfwidth), 2):
             hit_mercury = 1
         else:
             hit_mercury = 0
             
-        if silent == 0:
-                print('Delta(CME apex, Venus): ', np.rad2deg(delta_venus))
+            silent_print('Delta(CME apex, Venus): ', np.rad2deg(delta_venus))
 
         if round(np.rad2deg(np.abs(delta_venus)), 2) < round(np.rad2deg(halfwidth), 2):
             hit_venus = 1
         else:
             hit_venus = 0
 
-        if silent == 0:
-                print('Delta(CME apex, L1): ', np.rad2deg(delta_L1))
+            silent_print('Delta(CME apex, L1): ', np.rad2deg(delta_L1))
 
         if round(np.rad2deg(np.abs(delta_L1)), 2) < round(np.rad2deg(halfwidth), 2):
             hit_L1 = 1
         else:
             hit_L1 = 0
 
-        if silent == 0:
-                print('Delta(CME apex, Earth): ', np.rad2deg(delta_earth))
+            silent_print('Delta(CME apex, Earth): ', np.rad2deg(delta_earth))
 
         if round(np.rad2deg(np.abs(delta_earth)), 2) < round(np.rad2deg(halfwidth), 2):
             hit_earth = 1
         else:
             hit_earth = 0
 
-        if silent == 0:
-                print('Delta(CME apex, Mars): ', np.rad2deg(delta_mars))
+            silent_print('Delta(CME apex, Mars): ', np.rad2deg(delta_mars))
 
         if round(np.rad2deg(np.abs(delta_mars)), 2) < round(np.rad2deg(halfwidth), 2):
             hit_mars = 1
@@ -845,32 +867,28 @@ def main():
 
         if outer_system == 1:
             
-            if silent == 0:
-                print('Delta(CME apex, Jupiter): ', np.rad2deg(delta_jupiter))
+            silent_print('Delta(CME apex, Jupiter): ', np.rad2deg(delta_jupiter))
 
             if round(np.rad2deg(np.abs(delta_jupiter)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_jupiter = 1
             else:
                 hit_jupiter = 0
                 
-            if silent == 0:
-                print('Delta(CME apex, Saturn): ', np.rad2deg(delta_saturn))
+            silent_print('Delta(CME apex, Saturn): ', np.rad2deg(delta_saturn))
 
             if round(np.rad2deg(np.abs(delta_saturn)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_saturn = 1
             else:
                 hit_saturn = 0
                 
-            if silent == 0:
-                print('Delta(CME apex, Uranus): ', np.rad2deg(delta_uranus))
+            silent_print('Delta(CME apex, Uranus): ', np.rad2deg(delta_uranus))
 
             if round(np.rad2deg(np.abs(delta_uranus)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_uranus = 1
             else:
                 hit_uranus = 0
             
-            if silent == 0:
-                print('Delta(CME apex, Neptune): ', np.rad2deg(delta_neptune))
+            silent_print('Delta(CME apex, Neptune): ', np.rad2deg(delta_neptune))
 
             if round(np.rad2deg(np.abs(delta_neptune)), 2) < round(np.rad2deg(halfwidth), 2):
                 hit_neptune = 1
@@ -889,11 +907,12 @@ def main():
         else:   
             if round(np.rad2deg(det_run[0])) == round(np.rad2deg(phi)) and round(det_run[1], 1) == round(f, 1) and round(np.rad2deg(det_run[2])) == round(np.rad2deg(halfwidth)):
                 det_plot = True
-                print('det_run set to True in ensemble!')
+                silent_print('det_run set to True in ensemble!')
                 det_run_no = runnumber
             else:
                 det_plot = False
         
+        #pdb.set_trace()
         ########################################################################
         # convert the time-elongation track to radial distance using ELCon
         
@@ -909,7 +928,7 @@ def main():
         if winds_valid[0] == 0:
             nofit.append(runnumber)
             continue
-        
+
         # make equidistant grid for ELEvo times, with 10 min resolution
 
         start_time = tinit
@@ -946,10 +965,19 @@ def main():
 
         if vinit < winds:
             accsign = -1
-            print('negative')
+            acceleration_type = "Deceleration"
         else:
             accsign = 1
-            print('positive')
+            acceleration_type = "Acceleration"
+
+        print("\n" + "-" * 50)
+        print("             Solar wind drag regime ")
+        print("-" * 50)
+        print(f"Initial CME speed:       {vinit:8.1f} km/s")
+        print(f"Ambient solar wind speed:{winds:8.1f} km/s")
+        print(f"Propagation regime:      {acceleration_type}")
+        print(f"Acceleration sign:       {accsign:+8d}")
+        print("-" * 50 + "\n")
 
         for i in range(timegrid):
             # heliocentric distance of CME apex in km
@@ -967,13 +995,6 @@ def main():
         R = rdrag /AU
 
         prediction = elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, movie=movie, timegrid=timegrid)
-        
-        if accsign < 0:
-            print('')
-            print('The CME is accelerated by the ambient solar wind.')
-        else:
-            print('')
-            print('The CME is decelerated by the ambient solar wind.')
 
         formatted_drag = "{:.2f}".format(gamma*1e7)
             
@@ -1105,6 +1126,8 @@ def main():
 
             if det_plot:
                 det_results = prediction
+                
+            plt.close('all')
         else:
             break   
     
@@ -1121,35 +1144,38 @@ def main():
             file.write('No DBMfit for runnumbers:' + '\n')
             file.write(str(nofit))
     else:
-        #det_run_count = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values
+        if not ensemble.empty:
+            filtered_ensemble = ensemble[(ensemble['run no.'] == det_run_no) & (ensemble['target'] == 'L1')]
+            det_run_count = filtered_ensemble['dt [h]'].values
+        else:
+            det_run_count = None
 
-        filtered_ensemble = ensemble[(ensemble['run no.'] == det_run_no) & (ensemble['target'] == 'L1')]
-        det_run_count = filtered_ensemble['dt [h]'].values
-    
-    #pdb.set_trace()
-
-    if np.isnan(det_run_count): 
+    if det_run_count is None:
         with open(txt_file, 'a') as file:
-            file.write('Deterministic run did not hit L1!' + '\n')  
+            file.write('No DBMfit possible for deterministic run!' + '\n')  
             file.write('No DBMfit for runnumbers:' + '\n')
-            file.write(str(nofit))           
-    else:               
-        #det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[idx]
-        #det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[idx]  
-        det_run_dv = filtered_ensemble['dv [km/s]'].values
-        det_run_dt = det_run_count
+            file.write(str(nofit))  
+    else:
+        if len(det_run_count) == 0 or np.isnan(det_run_count[0]):
+            with open(txt_file, 'a') as file:
+                file.write('Deterministic run did not hit L1!' + '\n')           
+        else:               
+            #det_run_dt = ensemble.loc[ensemble['run no.'] == det_run_no, 'dt [h]'].values[idx]
+            #det_run_dv = ensemble.loc[ensemble['run no.'] == det_run_no, 'dv [km/s]'].values[idx]  
+            det_run_dv = filtered_ensemble['dv [km/s]'].values
+            det_run_dt = det_run_count
 
-        # Open the file in write mode ('w')
-        with open(txt_file, 'a') as file:
-            # Write the value to the file
-            file.write('Run number of deterministic run:' + '\n')
-            file.write(str(det_run_no) +  '\n')
-            file.write('Difference in arrival time:' + '\n')
-            file.write(str(det_run_dt) +  '\n')
-            file.write('Difference in arrival speed:' + '\n')
-            file.write(str(det_run_dv) +  '\n')
-            file.write('No DBMfit for runnumbers:' + '\n')
-            file.write(str(nofit))
+            # Open the file in write mode ('w')
+            with open(txt_file, 'a') as file:
+                # Write the value to the file
+                file.write('Run number of deterministic run:' + '\n')
+                file.write(str(det_run_no) +  '\n')
+                file.write('Difference in arrival time:' + '\n')
+                file.write(str(det_run_dt) +  '\n')
+                file.write('Difference in arrival speed:' + '\n')
+                file.write(str(det_run_dv) +  '\n')
+                file.write('No DBMfit for runnumbers:' + '\n')
+                file.write(str(nofit))
     
     if ensemble.empty:
         with open(txt_file, 'a') as file:
@@ -1211,6 +1237,7 @@ def main():
     print("ELEvoHI needed", elapsed_time, "minutes.")
     #print(np.rad2deg(det_run[0]), det_run[1], np.rad2deg(det_run[2]))
     #pdb.set_trace()
+    
         
 if __name__ == '__main__':
     main()

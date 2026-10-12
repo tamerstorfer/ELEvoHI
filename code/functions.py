@@ -27,6 +27,16 @@ import copy
 AU = const.au.to_value('km')
 rsun = const.R_sun.to_value('km')
 
+SILENT = None
+
+def set_silent(value):
+    global SILENT
+    SILENT = value
+
+def silent_print(*args, **kwargs):
+    if not SILENT:
+        print(*args, **kwargs)
+
 def load_config(config_path):
     with open(config_path, 'r') as f:
         config = json.load(f)
@@ -62,6 +72,7 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
         new_time_axis = calculate_new_time_axis(min_time, max_time, cadence=cadence)
 
     interpolated_tracks = np.zeros((len(files),new_time_axis.shape[0]))
+    #interpolated_tracks = np.full((len(files), new_time_axis.shape[0]), np.nan)
 
     # Get a list of distinguishable colors from the colorblind palette
     num_colors = len(files)
@@ -82,6 +93,7 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
 
         # Create an interpolation function using interp1d
         interp_func = interp1d(x, df['ELON'], kind='linear', fill_value="extrapolate")
+        #interp_func = interp1d(x, df['ELON'], kind='linear', bounds_error=False, fill_value=np.nan)
 
         # Convert new_time_axis to Unix timestamps in seconds
         x_new = (new_time_axis - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
@@ -94,6 +106,23 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
 
         interpolated_tracks[track_num -1,:] = interp_values
 
+    silent_print("\nTrack ranges:")
+    for file in files:
+        df = pd.read_csv(event_path + file)
+        df['TRACK_DATE'] = pd.to_datetime(df['TRACK_DATE'])
+        silent_print(f"{file}: {df['TRACK_DATE'].min()} -> {df['TRACK_DATE'].max()}")
+
+    silent_print("\nCommon time axis:")
+    silent_print(f"{new_time_axis[0]} -> {new_time_axis[-1]}")
+    silent_print(f"Number of time steps: {len(new_time_axis)}")
+
+    # Check which time steps have no valid track values
+    valid_counts = np.sum(np.isfinite(interpolated_tracks), axis=0)
+
+    silent_print("\nNumber of valid tracks at each time step:")
+    for time, count in zip(new_time_axis, valid_counts):
+        if count == 0:
+            silent_print(f"NO DATA: {time}")
 
     # Calculate the mean values for each element across tracks
     mean_values_inklnan = np.nanmean(interpolated_tracks, axis=0)
@@ -262,6 +291,8 @@ def fpf_mab(track, startcut, endcut, prediction_path):
     speed_text = f'V$_{{const.}}$ = {s_rounded} km s$^{{-1}}$'
 
     underlined_effect = [path_effects.SimpleLineShadow(), path_effects.Normal()]
+    
+    #pdb.set_trace()
 
     text_loc = round(len(time) * 0.7)
     step = (round(max(ydata) - min(ydata))) / 10
@@ -317,6 +348,7 @@ def fpf(track, startcut, endcut, prediction_path):
     #df["time"] = pd.to_datetime(df["time"])
 
     time_nu = df["time"][startcut:endcut]
+    
 
     # Convert the 'time' column to a numerical time array
     time_n = time_nu.apply(lambda x: x.timestamp())
@@ -511,7 +543,7 @@ def cost_function(params, *args):
     vinit, swspeed, rinit, ydata, x = args
     predicted = fitdbm(x, gamma, vinit, swspeed, rinit)
 
-    return np.mean(np.abs(ydata - predicted))# * logistic_growth(ydata,0.3)/logistic_growth(ydata,0.3).max() )
+    return np.mean(np.abs(ydata - predicted))
 
 
 def cost_functionneg(params, *args):
@@ -525,7 +557,7 @@ def cost_functionneg(params, *args):
 #     predicted = fitdbmneg(xdata, gamma)
 #     return np.sum((ydata - predicted) ** 2)
 
-def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfit = 20, silent = 1, max_residual = 1.5, max_gamma = 2e-7):
+def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfit = 20, max_residual = 1.5, max_gamma = 2e-7):
     """ fit the ELCon time-distance track using the drag-based equation of motion from Vrsnak et al. (2013) """
     global  runnumber
 
@@ -572,7 +604,6 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
     
     # Initial guess for the parameter gamma
     initial_guess = 1e-7
-    #k= 0.3
 
     # do a fit for each wind speed separately and plot valid fits
     for i in range(len(winds)):
@@ -582,50 +613,43 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
             result = minimize(cost_function, initial_guess,args=(vinit,swspeed,rinit,ydata,xdata), method='Nelder-Mead')
             # gamma_fit, pcov = curve_fit(fitdbm, xdata, ydata,p0=initial_guess,method="dogbox")
             # Print the fitted parameter
-            if silent == 0:
-                print('=====') 
-                print('wind: ', winds[i], 'success: ', result.success)
-            success[i] = True
+            
+            silent_print('=====') 
+            silent_print('wind: ', winds[i], 'success: ', result.success)
+            success[i] = result.success# True
             if result.success:
                 gamma_fit = result.x[0]
-                if silent == 0:
-                    print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
+                silent_print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
                 # fit_ = fitdbm(xdata, gamma_fit)
                 fit_ = fitdbm(xdata, gamma_fit, vinit, swspeed, rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
                 residuals[i,:] = np.abs(ydata - fit_)#np.median(np.sqrt((ydata - fit_) ** 2 ))# * logistic_growth(ydata,k)/logistic_growth(ydata,k).max())
                 fitspeed[i,:] = np.gradient(fit[i,:], xdata)
-                if silent == 0:
-                    print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
-                
-                if silent == 0:
-                    print('-----')            
-                    print('positive')
+                silent_print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
+                silent_print('-----')            
+                silent_print('positive')
             else:
                 continue
 
         else:
             # Perform the optimisation
             result = minimize(cost_functionneg, initial_guess, args=(vinit,swspeed,rinit,ydata,xdata), method='Nelder-Mead')
-            if silent == 0:
-                print('=====')
-                print('wind: ', winds[i], 'success: ', result.success)
+            silent_print('=====')
+            silent_print('wind: ', winds[i], 'success: ', result.success)
             success[i] = result.success
             # Print the fitted parameter
             if result.success:
                 gamma_fit = result.x[0]
-                if silent == 0:
-                    print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
+                silent_print(f"Fitted gamma: {round(gamma_fit*1e7, 2)} 1e-7 1/km")
                 fit_ = fitdbmneg(xdata, gamma_fit, vinit, swspeed, rinit)
                 gamma[i] = gamma_fit
                 fit[i,:] = fit_   
                 residuals[i,:] = np.abs(ydata - fit_)#np.median(np.abs(ydata - fit_)) test because the wrong wind speed is chosen
                 fitspeed[i,:] = np.gradient(fit[i,:], xdata)
-                if silent == 0:
-                    print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
-                    print('-----')            
-                    print('negative')
+                silent_print('mean_res: ', round(np.mean(residuals[i,:])/rsun, 2), 'solar radii')
+                silent_print('-----')            
+                silent_print('negative')
             else:
                 continue
             
@@ -681,21 +705,19 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
             gamma_v.append(gamma[i])
             res_v.append(res[i]/rsun)
             winds_v.append(winds[i])
-            if silent == 0:
-                print('------------')
-                print('Valid fit:')
-                print('i: ', i)
-                print('Gamma: ', round(gamma[i]*1e7, 2), '1e-7 1/km')
-                print('Mean Residual: ', round(res[i]/rsun, 2), 'solar radii')
-                print('Wind speed: ', winds[i])
+            silent_print('------------')
+            silent_print('Valid fit:')
+            silent_print('i: ', i)
+            silent_print('Gamma: ', round(gamma[i]*1e7, 2), '1e-7 1/km')
+            silent_print('Mean Residual: ', round(res[i]/rsun, 2), 'solar radii')
+            silent_print('Wind speed: ', winds[i])
             if det_plot:
                 ax.plot(distance_rsun, fitspeed[i,:], label='fit', linewidth=1, c=cmap.to_rgba(winds[i]))
         else:
-            if silent == 0:
-                print('------------')
-                print('i: ',i)
-                print('wrong gamma: ', round(gamma[i]*1e7, 2), '1e-7 1/km')
-                print(round(res[i]/rsun, 2))
+            silent_print('------------')
+            silent_print('i: ',i)
+            silent_print('wrong gamma: ', round(gamma[i]*1e7, 2), '1e-7 1/km')
+            silent_print(round(res[i]/rsun, 2))
             continue
 
     if det_plot:
@@ -710,12 +732,12 @@ def DBMfitting(time, distance_au, prediction_path, det_plot, startfit = 1, endfi
         elcon_out.to_csv(prediction_path + "ELCon.csv", index=False, header=["time", "heliocentric distance", "speed"])
         
         # Calculate y-axis limits
-        # y_lower = min(speed) - 100
-        # y_upper = max(speed) + 100
+        y_lower = min(speed) - 100
+        y_upper = max(speed) + 100
         
         # Use fixed y-axis limits
-        y_lower = 0
-        y_upper = 1500
+        #y_lower = 0
+        #y_upper = 2000
 
         # Set the y-axis limits
         ax.set_ylim(y_lower, y_upper)
@@ -940,6 +962,10 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
     time_diff = np.diff(tnum)
     
     hit = 0    
+    
+    print("\n" + "=" * 60)
+    print("                 PREDICTED IN-SITU ARRIVALS")
+    print("=" * 60)
 
     if sta_available == 1 and hit_sta == 1:
         ############# STEREO-A #############
@@ -1266,7 +1292,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
             arrtime_uranus = time_array[index_uranus]
 
             # arrival speed at Uranus
-            distance_diff = np.diff(d_mars*AU)
+            distance_diff = np.diff(d_uranus*AU)
             speed_uranus = distance_diff / time_diff
             arrspeed_uranus = speed_uranus[index_uranus-1] # first element is cut off during building the time derivative
 
@@ -1304,6 +1330,7 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                          "arrival speed [km/s]": int(round(arrspeed_neptune)), "dt [h]": np.nan, "dv [km/s]": np.nan})
 
     print("------------------------------------")
+    print("=" * 60)
     
     if not hit:
         pred.append({"target": np.nan, "arrival time [UT]": np.nan,
@@ -1419,6 +1446,8 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
         # Loop over time frames
     
         for k in range(timegrid):
+            
+            plt.close('all')
             
             figmov = plt.figure(figsize=(10, 10))
             backcolor = 'black'
@@ -1646,7 +1675,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 filename = prediction_path + 'ELEvoHI_HEE_m.jpg'
                 plt.savefig(filename, dpi=300, facecolor=figmov.get_facecolor(), edgecolor='none', bbox_inches='tight')
                 if not movie:
-                    figmov.clf()
                     plt.close(figmov)
                     break
     
@@ -1655,8 +1683,6 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 framestr = '%05i' % (k)
                 filename = prediction_path + '/frames/frame_' + framestr + '.jpg' 
                 plt.savefig(filename, dpi=300, facecolor=figmov.get_facecolor(), edgecolor='none', bbox_inches='tight')
-                
-                figmov.clf()
                 plt.close(figmov)
         
         if movie:
@@ -1666,8 +1692,26 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 f'-c:v libx264 -pix_fmt yuv420p -b:v 5000k -movflags +faststart '
                 f'"{prediction_path}/movie.mp4" -y'
             )
+        
+            plt.close('all')
+            
+            cme1 = {
+            "time": time_array,
+            "R": R,
+            "direction": direction,
+            "f": f,
+            "halfwidth": halfwidth,
+            "track": track,
+            "HIobs": HIobs,
+            "positions": positions,
+            "availability": availability,
+            "hit_counts": hit_counts,
+            "delta_values": delta_values
+            }
+
+            with open(f"{prediction_path}/CME1.pkl", "wb") as f:
+                pickle.dump(cme1, f)
     
-   
     return prediction
 
 def assess_prediction(prediction, target, is_time, is_speed):
