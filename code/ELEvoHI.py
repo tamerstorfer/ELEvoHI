@@ -24,7 +24,7 @@ import shutil
 import pdb
 import time as ti
 
-from functions import load_config,  merge_tracks,  fpf, fpf_mab, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble, set_silent, silent_print
+from functions import load_config,  merge_tracks,  fpf, fpf_mab, ELCon,   DBMfitting,  elevo, assess_prediction, assess_ensemble, set_silent, silent_print, make_ensemble_movie
 
 # to do:
 # if no start and endtimes are given, use the whole track
@@ -121,15 +121,15 @@ def main():
         track = track.reset_index(drop=True)
       
 
-        print("\n" + "=" * 55)
-        print("                 TRACK RANGE USED")
-        print("=" * 55)
-        print(f"{'':18} {'Start':>15} {'End':>15}")
-        print("-" * 55)
-        print(f"{'Index':18} {startcut:>15} {endcut:>15}")
-        print(f"{'Time':18} {str(track.loc[startcut, 'time']):>15} {str(track.loc[endcut, 'time']):>15}")
-        print(f"{'Elongation [deg]':18} {track.loc[startcut, 'elongation']:>15.2f} {track.loc[endcut, 'elongation']:>15.2f}")
-        print("=" * 55 + "\n")
+    print("\n" + "=" * 55)
+    print("                 TRACK RANGE USED")
+    print("=" * 55)
+    print(f"{'':18} {'Start':>15} {'End':>15}")
+    print("-" * 55)
+    print(f"{'Index':18} {startcut:>15} {endcut:>15}")
+    print(f"{'Time':18} {str(track.loc[startcut, 'time']):>15} {str(track.loc[endcut, 'time']):>15}")
+    print(f"{'Elongation [deg]':18} {track.loc[startcut, 'elongation']:>15.2f} {track.loc[endcut, 'elongation']:>15.2f}")
+    print("=" * 55 + "\n")
     
     # ELEvoHI ensemble
     # Define the range of values for each parameter to build the ensemble
@@ -592,6 +592,8 @@ def main():
         # calculate angular separation of CME apex from each target
 
     # Ensemble calculation starts here
+    
+    ensemble_movie_members = []
   
     for halfwidth, phi, f in zip(lambda_values, phi_values, f_values):
         
@@ -965,10 +967,10 @@ def main():
 
         if vinit < winds:
             accsign = -1
-            acceleration_type = "Deceleration"
+            acceleration_type = "Acceleration"
         else:
             accsign = 1
-            acceleration_type = "Acceleration"
+            acceleration_type = "Deceleration"
 
         print("\n" + "-" * 50)
         print("             Solar wind drag regime ")
@@ -994,7 +996,25 @@ def main():
         
         R = rdrag /AU
 
-        prediction = elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, movie=movie, timegrid=timegrid)
+        prediction = elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availability, hit_counts, delta_values, positions, HIobs, outer_system, prediction_path, det_plot, runnumber, movie=False, timegrid=timegrid)
+
+        if movie:
+            ensemble_movie_members.append({
+                'R': R.copy(),
+                'time_array': list(time_array),
+                'direction': direction,
+                'f': f,
+                'halfwidth': halfwidth,
+                'runnumber': runnumber,
+                'det_plot': det_plot,
+
+                # Additional information for PUNCH constraints
+                'phi': phi,
+                'd': d,
+                'R_elcon': R_elcon.copy(),
+                'elon': elon_rad.copy(),
+                'track_time': track['time'].to_numpy(copy=True),
+            })
 
         formatted_drag = "{:.2f}".format(gamma*1e7)
             
@@ -1130,6 +1150,51 @@ def main():
             plt.close('all')
         else:
             break   
+    
+
+    if movie and do_ensemble and ensemble_movie_members:
+        # Save the data needed for the independent combined movie programme.
+        combined_movie_data = {
+            'event': os.path.basename(os.path.normpath(prediction_path)),
+            'HIobs': HIobs,
+            'outer_system': outer_system,
+            'time_array': ensemble_movie_members[0]['time_array'],
+            'members': [
+                {
+                    'R': member['R'],
+                    'direction': member['direction'],
+                    'f': member['f'],
+                    'halfwidth': member['halfwidth'],
+                    'runnumber': member['runnumber'],
+                    'det_plot': member['det_plot'],
+                    'phi': member['phi'],
+                    'd': member['d'],
+                    'R_elcon': member['R_elcon'],
+                    'elon': member['elon'],
+                    'track_time': member['track_time']
+                }
+                for member in ensemble_movie_members
+            ],
+            'track': track[['time', 'elongation']].copy()
+        }
+
+        data_file = os.path.join(prediction_path, 'combined_movie_data.pkl')
+        with open(data_file, 'wb') as file:
+            pickle.dump(combined_movie_data, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+        print(f"Saved combined movie data to {data_file}")
+
+        # Create the existing ensemble movie as before.
+        make_ensemble_movie(
+            ensemble_movie_members,
+            prediction_path,
+            positions,
+            availability,
+            outer_system,
+            track,
+            HIobs
+        )
+
     
     txt_file = prediction_path + 'notes.txt'
     if os.path.exists(txt_file):

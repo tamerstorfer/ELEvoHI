@@ -1,7 +1,7 @@
 {
 "basic_path": "../../",
-"track_path": "/Users/tanja/CME_Tracking/tracks/20080602_A",
-"eventdate": "20080602",
+"track_path": "/Users/tanja/CME_Tracking/tracks_everyday/20251110_A",
+"eventdate": "20251110",
 "HIobs": "A",
 "mode": "science",
 "do_ensemble": true,
@@ -11,9 +11,9 @@
 10
 ],
 "phi_manual": [
-75,
-65,
-85
+31,
+21,
+41
 ],
 "phi_step": 2,
 "f": [
@@ -23,16 +23,16 @@
 ],
 "f_step": 0.1,
 "halfwidth": [
-35,
-25,
-45
+33,
+23,
+43
 ],
 "halfwidth_step": 5,
-"starttime": "2008-06-02 11:18",
-"endtime": "2008-06-06 09:58",
+"starttime": "2025-11-10 11:18",
+"endtime": "2025-11-12 00:38",
 "outer_system": false,
-"movie": false,
+"movie": true,
 "silent": true,
-"STEREOB_ist_obs": "2008-06-06 22:00",
-"STEREOB_isv_obs": 403
+"L1_ist_obs": "2025-11-12 18:52",
+"L1_isv_obs": 800
 }

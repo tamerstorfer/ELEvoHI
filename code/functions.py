@@ -63,7 +63,8 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
     # Calculate common new time axis
     all_time_data = []
     for file in files:
-        df = pd.read_csv(event_path + file)
+        df = pd.read_csv(os.path.join(event_path, file))
+        df = df.rename(columns={'time': 'TRACK_DATE', 'elongation': 'ELON'})
         all_time_data.extend(pd.to_datetime(df['TRACK_DATE']))
 
     min_time = min(all_time_data)
@@ -80,7 +81,8 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
 
     # Loop through each file and plot data
     for track_num, (file, color) in enumerate(zip(files, colors), start=1):
-        df = pd.read_csv(event_path + file)
+        df = pd.read_csv(os.path.join(event_path, file))
+        df = df.rename(columns={'time': 'TRACK_DATE', 'elongation': 'ELON'})
 
         # Convert TRACK_DATE to datetime
         df['TRACK_DATE'] = pd.to_datetime(df['TRACK_DATE'])
@@ -107,8 +109,10 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
         interpolated_tracks[track_num -1,:] = interp_values
 
     silent_print("\nTrack ranges:")
+    
     for file in files:
-        df = pd.read_csv(event_path + file)
+        df = pd.read_csv(os.path.join(event_path, file))
+        df = df.rename(columns={'time': 'TRACK_DATE', 'elongation': 'ELON'})
         df['TRACK_DATE'] = pd.to_datetime(df['TRACK_DATE'])
         silent_print(f"{file}: {df['TRACK_DATE'].min()} -> {df['TRACK_DATE'].max()}")
 
@@ -124,15 +128,21 @@ def merge_tracks(event_path, prediction_path, cadence=40, new_time_axis=None):
         if count == 0:
             silent_print(f"NO DATA: {time}")
 
-    # Calculate the mean values for each element across tracks
-    mean_values_inklnan = np.nanmean(interpolated_tracks, axis=0)
-    mean_values = mean_values_inklnan[np.isfinite(mean_values_inklnan)]
 
-    # Calculate the standard deviations for each element across tracks
-    std_values = np.nanstd(interpolated_tracks, axis=0)
-    std_values = std_values[np.isfinite(mean_values_inklnan)]
-    
-    new_time_axis = new_time_axis[np.isfinite(mean_values_inklnan)]
+    if len(files) == 1:
+        # Use the single track directly; no averaging is needed.
+        mean_values_inklnan = interpolated_tracks[0]
+        std_values = np.zeros_like(mean_values_inklnan)
+    else:
+        # Calculate the mean and standard deviation across multiple tracks.
+        mean_values_inklnan = np.nanmean(interpolated_tracks, axis=0)
+        std_values = np.nanstd(interpolated_tracks, axis=0)
+
+    valid = np.isfinite(mean_values_inklnan)
+    mean_values = mean_values_inklnan[valid]
+    std_values = std_values[valid]
+    new_time_axis = new_time_axis[valid]
+
 
     # Calculate mean values by dividing by the number of files
     num_files = len(files)
@@ -1713,6 +1723,334 @@ def elevo(R, time_array, tnum, direction, f, halfwidth, vdrag, track, availabili
                 pickle.dump(cme1, f)
     
     return prediction
+
+def get_movie_positions(frame_times, availability, outer_system):
+    """Calculate time-dependent positions for the ensemble movie."""
+    
+    #CHECK TOMORROW!
+    #reference_member = ensemble_movie_members[0]
+
+    #frame_times = pd.to_datetime(reference_member['time_array'][::3])
+
+    start = frame_times[0].strftime('%Y-%m-%d %H:%M')
+    stop = frame_times[-1].strftime('%Y-%m-%d %H:%M')
+
+    bodies = {
+        'mercury': 199,
+        'venus': 299,
+        'mars': 499,
+    }
+
+    if outer_system:
+        bodies.update({
+            'jupiter': 599,
+            'saturn': 699,
+            'uranus': 799,
+            'neptune': 899,
+        })
+
+    spacecraft = {
+        'sta': ('STEREO-A', 'sta_available'),
+        'stb': ('STEREO-B', 'stb_available'),
+        'mes': ('Messenger', 'mes_available'),
+        'vex': ('Venus Express', 'vex_available'),
+        'solo': ('Solar Orbiter', 'solo_available'),
+        'psp': ('Parker Solar Probe', 'psp_available'),
+        'bepi': ('BepiColombo', 'bepi_available'),
+    }
+
+    for key, (body, availability_key) in spacecraft.items():
+        if availability[availability_key]:
+            bodies[key] = body
+
+    movie_positions = {}
+
+    for name, body in bodies.items():
+        coord = get_horizons_coord(
+            body,
+            time={
+                'start': start,
+                'stop': stop,
+                'step': '10m',
+            }
+        )
+
+        coord = coord.transform_to(frames.HeliographicStonyhurst)
+
+        ephem_times = pd.DatetimeIndex(
+            pd.to_datetime(coord.obstime.to_datetime())
+        )
+        ephem_seconds = (
+            ephem_times - ephem_times[0]
+        ).total_seconds().to_numpy()
+
+        frame_seconds = (
+            frame_times - ephem_times[0]
+        ).total_seconds().to_numpy()
+
+        radius = coord.radius.to_value('AU')
+        longitude = np.unwrap(np.deg2rad(coord.lon.to_value('deg')))
+
+        movie_positions[name] = {
+            'r': np.interp(frame_seconds, ephem_seconds, radius),
+            'lon': np.interp(frame_seconds, ephem_seconds, longitude),
+        }
+
+    return movie_positions
+
+def make_ensemble_movie(ensemble_movie_members, prediction_path, positions, availability, outer_system, track, HIobs, movie_positions=None):
+    """Create movie frames containing all valid ensemble members."""
+
+    if not ensemble_movie_members:
+        print("No valid ensemble members available for the movie.")
+        return
+
+    # Use the deterministic member as the reference time grid.
+    # If it has no valid fit, fall back to the middle valid member.
+    reference_member = next(
+        (member for member in ensemble_movie_members if member['det_plot']),
+        ensemble_movie_members[len(ensemble_movie_members) // 2]
+    )
+
+    all_frame_times = pd.to_datetime(reference_member['time_array'])
+    frame_indices = np.arange(0, len(all_frame_times), 3)
+    frame_times = all_frame_times[frame_indices]    
+    frame_seconds = frame_times.astype('int64').to_numpy() / 1e9
+    
+    movie_positions = get_movie_positions(frame_times, availability, outer_system)
+    
+    # Interpolate the observed elongation onto the movie time axis.
+    elon = track["elongation"]
+
+    track["time"] = pd.to_datetime(track["time"])
+    x = (track["time"] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
+
+    interp_func = interp1d(x, elon, kind='linear', fill_value="extrapolate")
+
+    time_a = pd.to_datetime(frame_times)
+    x_movie = (time_a - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
+    
+    x_last_element = x.iloc[-1]
+    
+    valid_indices = np.where(x_movie <= x_last_element)[0]
+    
+    interp_elon = interp_func(x_movie[valid_indices])
+    elon_rad = np.deg2rad(interp_elon)
+
+    tangent_length = 1.2
+
+    frames_path = os.path.join(prediction_path, 'frames')
+    os.makedirs(frames_path, exist_ok=True)
+    
+    for filename in os.listdir(frames_path):
+        if filename.startswith('frame_') and filename.endswith('.jpg'):
+            os.remove(os.path.join(frames_path, filename))
+
+    print("Making ensemble movie frames.")
+    
+    # Reference CME apex distance for the movie termination criterion.
+    reference_times = pd.to_datetime(reference_member['time_array'])
+    reference_seconds = reference_times.astype('int64').to_numpy() / 1e9
+    reference_R = np.asarray(reference_member['R'])
+
+    for k, frame_time in enumerate(frame_times):
+        plt.close('all')
+        
+        reference_apex = np.interp(frame_seconds[k], reference_seconds, reference_R)
+
+        if reference_apex >= 1.4:
+            silent_print(f"Stopping ensemble movie: CME apex reached {reference_apex:.2f} AU.")
+            break
+
+        figmov = plt.figure(figsize=(10, 10))
+        ax = figmov.add_subplot(projection='polar')
+
+        # Draw every ensemble member at the same absolute time.
+        for member in ensemble_movie_members:
+            member_seconds = (
+                pd.to_datetime(member['time_array'])
+                .astype('int64')
+                .to_numpy() / 1e9
+            )
+
+            if frame_seconds[k] < member_seconds[0]:
+                continue
+            if frame_seconds[k] > member_seconds[-1]:
+                continue
+
+            radius = np.interp(
+                frame_seconds[k],
+                member_seconds,
+                member['R']
+            )
+
+            a, b, c = elevo_analytic(
+                radius * AU,
+                member['f'],
+                member['halfwidth'],
+                0.,
+                member['runnumber'],
+                out=False,
+                plot=True
+            )
+
+            a, b, c = a / AU, b / AU, c / AU
+
+            t1 = np.arange(181) * np.pi / 180
+            t = t1 - member['direction']
+
+            denominator = np.sqrt(
+                (b * np.cos(t1)) ** 2 +
+                (a * np.sin(t1)) ** 2
+            )
+
+            xc = (
+                c * np.cos(member['direction']) +
+                (a * b / denominator) * np.sin(t)
+            )
+            yc = (
+                c * np.sin(member['direction']) +
+                (a * b / denominator) * np.cos(t)
+            )
+
+            theta_ell = np.arctan2(yc, xc)
+            r_ell = np.sqrt(xc**2 + yc**2)
+
+            if member['det_plot']:
+                ax.plot(
+                    theta_ell, r_ell,
+                    color='red',
+                    linewidth=2.0,
+                    alpha=1.0,
+                    zorder=100
+                )
+            else:
+                ax.plot(
+                    theta_ell, r_ell,
+                    color='tab:orange',
+                    linewidth=0.8,
+                    alpha=0.18,
+                    zorder=2
+                )
+
+        # Plot the Sun at the origin.
+        ax.scatter(
+            0, 0, color='gold',
+            marker='o', s=70, zorder=5
+        )
+
+        # Keep Earth fixed; update the other planets at each frame.
+        for name, color in [
+            ('mercury', 'dimgrey'),
+            ('venus', 'orange'),
+            ('earth', 'mediumseagreen'),
+            ('mars', 'orangered')
+        ]:
+            if name == 'earth':
+                lon = positions['earth_lon']
+                radius = positions['earth_r']
+            else:
+                lon = movie_positions[name]['lon'][k]
+                radius = movie_positions[name]['r'][k]
+
+            ax.scatter(
+                lon,
+                radius,
+                color=color,
+                marker='o',
+                zorder=4
+            )
+
+        if outer_system:
+            for name, color in [
+                ('jupiter', 'darkgoldenrod'),
+                ('saturn', 'palegreen'),
+                ('uranus', 'cyan'),
+                ('neptune', 'cornflowerblue')
+            ]:
+                ax.scatter(
+                    movie_positions[name]['lon'][k],
+                    movie_positions[name]['r'][k],
+                    color=color,
+                    marker='o',
+                    zorder=4
+                )
+
+            ax.set_ylim(0, 32)
+        else:
+            ax.set_ylim(0, 1.2)
+            
+        # Plot spacecraft at their time-dependent positions.
+        spacecraft = [
+            ('sta', 'sta_available', 'tab:blue'),
+            ('stb', 'stb_available', 'tab:orange'),
+            ('mes', 'mes_available', 'tab:green'),
+            ('vex', 'vex_available', 'tab:red'),
+            ('solo', 'solo_available', 'tab:purple'),
+            ('psp', 'psp_available', 'tab:brown'),
+            ('bepi', 'bepi_available', 'tab:pink')
+        ]
+
+        for name, availability_key, color in spacecraft:
+            if availability[availability_key]:
+                ax.scatter(
+                    movie_positions[name]['lon'][k],
+                    movie_positions[name]['r'][k],
+                    color=color,
+                    marker='o',
+                    s=20,
+                    zorder=4
+                )
+
+        # Plot the HI tangent using the current observer position.
+        if k < len(elon_rad) - 1:
+            if HIobs == 'A':
+                start_angle = movie_positions['sta']['lon'][k]
+                start_radius = movie_positions['sta']['r'][k]
+            elif HIobs == 'B':
+                start_angle = movie_positions['stb']['lon'][k]
+                start_radius = movie_positions['stb']['r'][k]
+
+            end_radius = np.sqrt(tangent_length**2 + start_radius**2 - 2. * tangent_length * start_radius * np.cos(elon_rad[k]))
+
+            if np.cos(elon_rad[k]) > (start_radius / tangent_length):
+                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius) - np.pi
+            else:
+                beta = np.arcsin((tangent_length * np.sin(elon_rad[k])) / end_radius)
+
+            if start_angle < 0:
+                end_angle = abs(beta) - abs(start_angle)
+            else:
+                end_angle = (abs(beta) - abs(start_angle)) * (-1)
+
+            line_x = np.array([start_angle, end_angle])
+            line_y = np.array([start_radius, end_radius])
+
+            ax.plot(line_x, line_y, color='red', linestyle='-', linewidth=2, zorder=5)
+
+        ax.set_title(frame_time.strftime('%Y-%m-%d %H:%M'))
+
+        filename = os.path.join(frames_path, f'frame_{k:05d}.jpg')
+        plt.savefig(
+            filename,
+            dpi=200,
+            facecolor=figmov.get_facecolor(),
+            edgecolor='none',
+            bbox_inches='tight'
+        )
+        plt.close(figmov)
+
+    os.system(
+        f'ffmpeg -framerate 60 '
+        f'-i "{frames_path}/frame_%05d.jpg" '
+        f'-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" '
+        f'-c:v libx264 -pix_fmt yuv420p -b:v 5000k '
+        f'-movflags +faststart '
+        f'"{prediction_path}/movie.mp4" -y'
+    )
+
+    plt.close('all')
+
 
 def assess_prediction(prediction, target, is_time, is_speed):
     
